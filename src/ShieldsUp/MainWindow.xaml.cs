@@ -35,15 +35,16 @@ public sealed partial class MainWindow : Window
         ConfigureWindowChrome();
         // Land on the first page instead of an empty frame
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
+        Core.Services.AppLogger.Log("shell", "MainWindow created");
     }
 
     /// <summary>
-    /// ContentPanel pages carry a ThemeShadow (set in the style); two things the
-    /// style alone can't provide are done here after each navigation:
-    ///  - the z-translation that gives the shadow depth (Translation is not a
-    ///    DependencyProperty, so style setters reject it), and
-    ///  - an explicit shadow receiver (the page root) — an in-tree ThemeShadow
-    ///    without a receiver element silently renders nothing.
+    /// Gives every ContentPanel its rounded-corner drop shadow after each
+    /// navigation. Each panel gets its OWN ThemeShadow instance (a shared one
+    /// from a style setter crashes natively once receivers are registered),
+    /// a small z-translation for depth, and the page root as the shadow
+    /// receiver an in-tree shadow needs in order to render. Any failure here
+    /// must degrade to "no shadow", never to a crash.
     /// </summary>
     private void ApplyPanelElevation()
     {
@@ -51,13 +52,25 @@ public sealed partial class MainWindow : Window
         {
             if (ContentFrame.Content is not FrameworkElement root) return;
             var panelStyle = (Style)Application.Current.Resources["ContentPanel"];
+            int elevated = 0;
             foreach (var border in FindDescendants<Border>(root))
             {
                 if (!ReferenceEquals(border.Style, panelStyle)) continue;
-                border.Translation = new System.Numerics.Vector3(0, 0, 8);
-                if (border.Shadow is ThemeShadow shadow && shadow.Receivers.Count == 0)
+                try
+                {
+                    var shadow = new ThemeShadow();
                     shadow.Receivers.Add(root);
+                    border.Shadow = shadow;
+                    border.Translation = new System.Numerics.Vector3(0, 0, 8);
+                    elevated++;
+                }
+                catch (Exception ex)
+                {
+                    // Shadow is cosmetic — log and continue, never crash.
+                    Core.Services.AppLogger.LogException("panel shadow (skipped)", ex);
+                }
             }
+            Core.Services.AppLogger.Log("shell", $"page '{root.GetType().Name}' — {elevated} content panel(s) elevated");
         });
     }
 

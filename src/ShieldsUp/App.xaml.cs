@@ -1,4 +1,4 @@
-using ShieldsUp.Helpers;
+using ShieldsUp.Core.Services;
 
 namespace ShieldsUp;
 
@@ -10,25 +10,32 @@ public partial class App : Application
     {
         InitializeComponent();
 
+        AppLogger.SessionHeader();
+        AppLogger.EnsureCrashDumps();
+
         UnhandledException += OnWinUIUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-            CrashLog.Write("AppDomain unhandled exception", e.ExceptionObject as Exception);
+            AppLogger.LogException("AppDomain unhandled exception",
+                e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject?.ToString() ?? "unknown"));
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
-            CrashLog.Write("Unobserved task exception", e.Exception);
+            AppLogger.LogException("Unobserved task exception", e.Exception);
             e.SetObserved();
         };
+        AppLogger.Log("startup", "exception handlers attached");
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        AppLogger.Log("startup", "OnLaunched — creating MainWindow");
         MainWnd = new MainWindow();
         MainWnd.Activate();
+        AppLogger.Log("startup", "MainWindow activated");
     }
 
     private void OnWinUIUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
-        CrashLog.Write("XAML unhandled exception", e.Exception);
+        AppLogger.LogException($"XAML unhandled exception: {e.Message}", e.Exception);
         e.Handled = true;
     }
 }

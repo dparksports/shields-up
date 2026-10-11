@@ -61,9 +61,10 @@
     </Style>
 
     <!-- The tab content panel: one white elevated panel per page (reference
-         CardStyle), carrying the thin drop shadow. Sections inside are
-         outlined by the SectionPanel style below. The z-translation that
-         reveals the shadow is applied by MainWindow.ApplyPanelElevation. -->
+         CardStyle). The drop shadow is attached per-panel in code by
+         MainWindow.ApplyPanelElevation — a ThemeShadow declared in a style
+         setter is a single shared instance across all panels and crashes
+         natively once receivers are registered against it. -->
     <Style x:Key="ContentPanel" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
@@ -71,11 +72,6 @@
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="20" />
         <Setter Property="Margin" Value="0,4,0,12" />
-        <Setter Property="Shadow">
-            <Setter.Value>
-                <ThemeShadow />
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <!-- Sections inside the content panel: outlined, flat (no shadow) -->
