@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu text contrast overrides. The NavigationView and MenuFlyout controls pick
+     their text from internal theme resources whose dark-mode values are dim grays
+     on some systems; these explicit overrides pin bright text on a solid dark pane.
+     Keys the running WinAppSDK doesn't know are ignored harmlessly. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Pane background: solid dark, no translucent layer ambiguity -->
+    <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#1B1B1B" />
+    <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#1B1B1B" />
+
+    <!-- Nav item text: bright in every state -->
+    <SolidColorBrush x:Key="NavigationViewItemForeground" Color="#F2F2F2" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundChecked" Color="#F2F2F2" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundDisabled" Color="#8A8A8A" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundSelectedPressed" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundCheckedPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundCheckedPressed" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundOnPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundOnPressed" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NavigationViewItemForegroundOnSelected" Color="#FFFFFF" />
+
+    <!-- Nav item surfaces: subtle hover, green-tinted selection -->
+    <SolidColorBrush x:Key="NavigationViewItemBackground" Color="Transparent" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#2E2E2E" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="#333333" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#24422F" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#2B4F39" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPressed" Color="#2B4F39" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundChecked" Color="#24422F" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundCheckedPointerOver" Color="#2B4F39" />
+    <SolidColorBrush x:Key="NavigationViewItemBackgroundCheckedPressed" Color="#2B4F39" />
+
+    <!-- Right-click context menus -->
+    <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="#F2F2F2" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForegroundDisabled" Color="#8A8A8A" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackground" Color="Transparent" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPointerOver" Color="#2E2E2E" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPressed" Color="#333333" />
+
+    <!-- Flyout host surfaces (used by the flyout presenter when it doesn't
+         resolve the MenuFlyout* keys above) -->
+    <SolidColorBrush x:Key="FlyoutForeground" Color="#F2F2F2" />
+    <SolidColorBrush x:Key="FlyoutBackground" Color="#262626" />
+
+</ResourceDictionary>
