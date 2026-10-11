@@ -10,7 +10,7 @@
         <converters:TaskStateToColorConverter x:Key="StateColor" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -41,7 +41,7 @@
 
         <!-- Tasks Grid -->
         <controls:DataGrid Grid.Row="2" x:Name="TasksGrid" AutoGenerateColumns="False"
-                           IsReadOnly="True" SelectionMode="Single" Foreground="#F2F2F2">
+                           IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding TaskName}" Width="*" />
                 <controls:DataGridTextColumn Header="Path" Binding="{Binding TaskPath}" Width="200" />

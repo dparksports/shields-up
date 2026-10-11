@@ -12,7 +12,7 @@
         <conv:SignatureStatusConverter x:Key="SignatureStatusConverter" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -48,7 +48,7 @@
 
         <!-- Apps List -->
         <controls:DataGrid x:Name="AppsDataGrid" Grid.Row="2" AutoGenerateColumns="False"
-                           IsReadOnly="True" SelectionMode="Single" Foreground="#F2F2F2">
+                           IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="App Name" Binding="{Binding Name}" Width="2*" />
                 <controls:DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*" />

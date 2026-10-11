@@ -6,7 +6,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     Loaded="Page_Loaded">
 
-    <ScrollViewer>
+    <ScrollViewer Background="{StaticResource PageBackgroundBrush}">
         <StackPanel Padding="24,16,24,24" MaxWidth="980" HorizontalAlignment="Left" Spacing="16">
 
             <StackPanel>
@@ -29,7 +29,7 @@
                     <TextBlock x:Name="StatusText" Text="Press Discover to scan for self-updating apps (self-update .old leftovers, updater folders, autostart updaters)."
                                Style="{StaticResource SubtleText}" Margin="0,0,0,8" TextWrapping="Wrap" />
                     <controls:DataGrid x:Name="TargetsGrid" MinHeight="140" MaxHeight="380"
-                                       AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Foreground="#F2F2F2">
+                                       AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="App" Binding="{Binding Name}" Width="150" />
                             <controls:DataGridTemplateColumn Header="Path" Width="230">

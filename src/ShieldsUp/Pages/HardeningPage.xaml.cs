@@ -39,8 +39,8 @@ public sealed partial class HardeningPage : Page
             {
                 Ipv6StatusText.Text = isDisabled ? "✓ IPv6 is DISABLED globally" : "⚠ IPv6 is currently ENABLED";
                 Ipv6StatusText.Foreground = isDisabled
-                    ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-                    : new SolidColorBrush(Microsoft.UI.Colors.Orange);
+                    ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
             });
         });
     }
@@ -69,8 +69,8 @@ public sealed partial class HardeningPage : Page
             {
                 LsaStatusText.Text = isProtected ? "✓ LSA Protection (RunAsPPL) is ENABLED" : "⚠ LSA Protection is DISABLED";
                 LsaStatusText.Foreground = isProtected
-                    ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-                    : new SolidColorBrush(Microsoft.UI.Colors.Orange);
+                    ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
             });
         });
     }
@@ -98,8 +98,8 @@ public sealed partial class HardeningPage : Page
             {
                 UacStatusText.Text = isStrict ? "✓ UAC is at Maximum Strictness" : "⚠ UAC is relaxed or disabled";
                 UacStatusText.Foreground = isStrict
-                    ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-                    : new SolidColorBrush(Microsoft.UI.Colors.Orange);
+                    ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
             });
         });
     }
@@ -147,17 +147,17 @@ public sealed partial class HardeningPage : Page
                         if (suspicious)
                         {
                             HostsStatusText.Text = $"⚠ Found {activeRules} active redirect(s). Potentially suspicious.";
-                            HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+                            HostsStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15));
                         }
                         else if (activeRules > 0)
                         {
                             HostsStatusText.Text = $"✓ Found {activeRules} standard redirect(s).";
-                            HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                            HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
                         }
                         else
                         {
                             HostsStatusText.Text = "✓ Hosts file is clean (default).";
-                            HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                            HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
                         }
                     });
                 }
@@ -167,7 +167,7 @@ public sealed partial class HardeningPage : Page
                     {
                         HostsContentBox.Text = "(File not found)";
                         HostsStatusText.Text = "✓ Hosts file missing (default behavior on some systems).";
-                        HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                        HostsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
                     });
                 }
             }

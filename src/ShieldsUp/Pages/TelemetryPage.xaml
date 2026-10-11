@@ -6,7 +6,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     Loaded="Page_Loaded">
 
-    <ScrollViewer>
+    <ScrollViewer Background="{StaticResource PageBackgroundBrush}">
         <StackPanel Padding="24,16,24,24" MaxWidth="980" HorizontalAlignment="Left" Spacing="16">
 
             <StackPanel>
@@ -28,7 +28,7 @@
                     </Grid>
                     <TextBlock x:Name="StatusText" Text="Scanning…" Style="{StaticResource SubtleText}" Margin="0,0,0,8" TextWrapping="Wrap" />
                     <controls:DataGrid x:Name="RulesGrid" MinHeight="160" MaxHeight="400"
-                                       AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Foreground="#F2F2F2">
+                                       AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
                         <controls:DataGrid.Columns>
                             <controls:DataGridTextColumn Header="App" Binding="{Binding AppName}" Width="170" />
                             <controls:DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="110" />

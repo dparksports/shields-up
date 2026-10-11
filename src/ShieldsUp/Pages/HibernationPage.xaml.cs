@@ -27,12 +27,12 @@ public sealed partial class HibernationPage : Page
             if (hibernateEnabled)
             {
                 HibernateStatusText.Text = "⚠ Hibernate is ENABLED — hiberfile exists on disk";
-                HibernateStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Orange);
+                HibernateStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
             }
             else
             {
                 HibernateStatusText.Text = "✓ Hibernate is disabled";
-                HibernateStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                HibernateStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
             }
 
             PowerStatesText.Text = output.Trim();

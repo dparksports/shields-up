@@ -11,7 +11,7 @@
         <converters:ActionToColorConverter x:Key="ActionToColor" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -63,7 +63,7 @@
 
         <!-- Rules Grid -->
         <controls:DataGrid Grid.Row="2" x:Name="RulesGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                           SelectionMode="Single" Foreground="#F2F2F2">
+                           SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
                 <controls:DataGridTemplateColumn Header="Enabled" Width="80">
                     <controls:DataGridTemplateColumn.CellTemplate>

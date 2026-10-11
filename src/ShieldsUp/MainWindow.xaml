@@ -9,10 +9,10 @@
     Title="Shields Up">
 
     <NavigationView
-        x:Name="Nav"
+        x:Name="Nav" PaneTitle="Shields Up"
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="False"
-        RequestedTheme="Dark"
+        RequestedTheme="Light"
         SelectionChanged="Nav_SelectionChanged"
         OpenPaneLength="220">
 

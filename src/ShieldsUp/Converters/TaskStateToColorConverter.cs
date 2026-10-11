@@ -10,11 +10,11 @@ public sealed class TaskStateToColorConverter : IValueConverter
     {
         return value switch
         {
-            "Running" => new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen),
-            "Ready" => new SolidColorBrush(Microsoft.UI.Colors.LightSkyBlue),
-            "Disabled" => new SolidColorBrush(Microsoft.UI.Colors.Gray),
-            "Queued" => new SolidColorBrush(Microsoft.UI.Colors.Goldenrod),
-            _ => new SolidColorBrush(Microsoft.UI.Colors.Gray)
+            "Running" => new SolidColorBrush(Microsoft.UI.Colors.ForestGreen),
+            "Ready" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x00, 0x7A, 0xFF)),
+            "Disabled" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B)),
+            "Queued" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00)),
+            _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B))
         };
     }
 

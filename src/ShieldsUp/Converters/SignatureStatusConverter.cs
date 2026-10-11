@@ -10,13 +10,13 @@ public sealed class SignatureStatusConverter : IValueConverter
     {
         return value switch
         {
-            "Valid (Store)" => new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen),
-            "Valid (Enterprise)" => new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen),
-            "System component" => new SolidColorBrush(Microsoft.UI.Colors.Gray),
-            "Developer-signed" => new SolidColorBrush(Microsoft.UI.Colors.Goldenrod),
-            "Unsigned" => new SolidColorBrush(Microsoft.UI.Colors.OrangeRed),
-            "Invalid/Error" => new SolidColorBrush(Microsoft.UI.Colors.OrangeRed),
-            _ => new SolidColorBrush(Microsoft.UI.Colors.Gray)
+            "Valid (Store)" => new SolidColorBrush(Microsoft.UI.Colors.ForestGreen),
+            "Valid (Enterprise)" => new SolidColorBrush(Microsoft.UI.Colors.ForestGreen),
+            "System component" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B)),
+            "Developer-signed" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00)),
+            "Unsigned" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15)),
+            "Invalid/Error" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15)),
+            _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B))
         };
     }
 

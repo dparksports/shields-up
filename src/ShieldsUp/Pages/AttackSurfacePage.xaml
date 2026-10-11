@@ -6,7 +6,7 @@
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     Loaded="Page_Loaded">
 
-    <Grid Padding="24,16,24,24">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -44,7 +44,7 @@
 
                             <TextBlock Text="WAN MINIPORTS" Style="{StaticResource SectionHeaderText}" Margin="0,8,0,0" />
                             <controls:DataGrid x:Name="WanMiniportGrid" MinHeight="110" MaxHeight="240"
-                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#F2F2F2">
+                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#1D1D1F">
                                 <controls:DataGrid.Columns>
                                     <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <controls:DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
@@ -77,7 +77,7 @@
 
                             <TextBlock Text="WIFI DIRECT ADAPTERS" Style="{StaticResource SectionHeaderText}" Margin="0,8,0,0" />
                             <controls:DataGrid x:Name="WifiDirectGrid" MinHeight="110" MaxHeight="240"
-                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#F2F2F2">
+                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#1D1D1F">
                                 <controls:DataGrid.Columns>
                                     <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <controls:DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
@@ -107,7 +107,7 @@
 
                             <TextBlock Text="DEBUG ADAPTERS" Style="{StaticResource SectionHeaderText}" Margin="0,8,0,0" />
                             <controls:DataGrid x:Name="KdnetGrid" MinHeight="110" MaxHeight="240"
-                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#F2F2F2">
+                                               AutoGenerateColumns="False" IsReadOnly="True" Foreground="#1D1D1F">
                                 <controls:DataGrid.Columns>
                                     <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
                                     <controls:DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />

@@ -566,8 +566,8 @@ public sealed partial class DbxSafetyPage : Page
         {
             target.Text = text;
             target.Foreground = isGood
-                ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-                : new SolidColorBrush(Microsoft.UI.Colors.Orange);
+                ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
         });
     }
 }

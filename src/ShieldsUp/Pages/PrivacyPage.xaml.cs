@@ -60,8 +60,8 @@ public sealed partial class PrivacyPage : Page
             {
                 VpnStatusText.Text = status;
                 VpnStatusText.Foreground = running > 0
-                    ? new SolidColorBrush(Microsoft.UI.Colors.Orange)
-                    : new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00))
+                    : new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
             });
         });
     }
@@ -104,8 +104,8 @@ public sealed partial class PrivacyPage : Page
             {
                 WifiDirectStatusText.Text = found ? "⚠ WiFi Direct adapter present" : "✓ No WiFi Direct adapters found";
                 WifiDirectStatusText.Foreground = found
-                    ? new SolidColorBrush(Microsoft.UI.Colors.Orange)
-                    : new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00))
+                    : new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
             });
         });
     }
@@ -162,8 +162,8 @@ public sealed partial class PrivacyPage : Page
             {
                 KdnetStatusText.Text = debugOn ? "⚠ Kernel Debug is ENABLED" : "✓ Kernel Debug is disabled";
                 KdnetStatusText.Foreground = debugOn
-                    ? new SolidColorBrush(Microsoft.UI.Colors.OrangeRed)
-                    : new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15))
+                    : new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
             });
         });
     }
@@ -196,8 +196,8 @@ public sealed partial class PrivacyPage : Page
                     ? "⚠ Telemetry task is active — data being sent"
                     : "✓ Telemetry task is disabled";
                 UsageDataStatusText.Foreground = enabled
-                    ? new SolidColorBrush(Microsoft.UI.Colors.Orange)
-                    : new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00))
+                    : new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
             });
         });
     }
@@ -261,8 +261,8 @@ public sealed partial class PrivacyPage : Page
                     ? "✓ Tamper Protection is ON"
                     : "⚠ Tamper Protection is OFF — settings may be vulnerable";
                 TamperStatusText.Foreground = isProtected
-                    ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-                    : new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+                    ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15));
                 TamperIcon.Text = isProtected ? "🛡" : "⚠";
             });
         });

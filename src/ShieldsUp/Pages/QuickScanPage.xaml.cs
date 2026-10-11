@@ -112,9 +112,9 @@ public sealed partial class QuickScanPage : Page
     /// <summary>Bindable wrapper around a SetupStep for the checklist UI.</summary>
     public class SetupStepItem : INotifyPropertyChanged
     {
-        private static readonly Brush GrayBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray);
-        private static readonly Brush GreenBrush = new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen);
-        private static readonly Brush AmberBrush = new SolidColorBrush(Microsoft.UI.Colors.Orange);
+        private static readonly Brush GrayBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B));
+        private static readonly Brush GreenBrush = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
+        private static readonly Brush AmberBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
 
         public SetupStep Step { get; }
 

@@ -9,8 +9,8 @@ public sealed class EnabledToColorConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value is true
-            ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-            : new SolidColorBrush(Microsoft.UI.Colors.Gray);
+            ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x86, 0x86, 0x8B));
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
@@ -23,8 +23,8 @@ public sealed class ActionToColorConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         return value as string == "Allow"
-            ? new SolidColorBrush(Microsoft.UI.Colors.MediumSeaGreen)
-            : new SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
+            ? new SolidColorBrush(Microsoft.UI.Colors.ForestGreen)
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15));
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>

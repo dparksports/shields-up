@@ -23,7 +23,9 @@ process-monitor suite in tow.
 | ✅ DBX Safety | EFI mount + SHA256 baseline drift, Authenticode bootloader check, DBX update download/apply, boot repair |
 | ⚙ Settings | Launch-at-logon (scheduled task, highest privileges), Mark-of-the-Web unblock |
 
-Dark theme only — the app frame (title bar) included.
+Visual theme ported from the EmojiWifi Windows reference: Apple-style light UI —
+`#007AFF` accent, white sidebar with `#E5F1FF` selected pills, `#F5F5F7` content over
+white cards (radius 12) with a hint of drop shadow.
 
 ## Architecture
 
