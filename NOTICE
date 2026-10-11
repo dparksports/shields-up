@@ -1,10 +1,9 @@
-ControlCore
-Copyright 2026 ControlCore contributors
+Shields Up
+Copyright 2026 Shields Up contributors
 
-This product is derived from AutoCommand (https://github.com/ — see the
-sibling autocommand1004 source tree). Engine code in ControlCore.Core
-(helpers, services, models) was extracted from AutoCommand and adapted
-to a WinUI 3 front end.
+This product is derived from AutoCommand (see the sibling autocommand1004
+source tree). Engine code in ShieldsUp.Core (helpers, services, models) was
+extracted from AutoCommand and adapted to a WinUI 3 front end.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use this file except in compliance with the License. You may obtain

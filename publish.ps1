@@ -1,4 +1,4 @@
-# ControlCore release build: self-contained win-x64 folder + zip + SHA256SUMS.
+# ShieldsUp release build: self-contained win-x64 folder + zip + SHA256SUMS.
 # Mirrors AutoCommand's distribution model (loose files, no installer).
 #
 # Usage:  .\publish.ps1 [-OutDir .\publish]
@@ -9,16 +9,16 @@ param(
 $ErrorActionPreference = "Stop"
 Push-Location (Split-Path -Parent $PSCommandPath)
 
-$version = (Select-Xml -Path ".\src\ControlCore\ControlCore.csproj" -XPath "//Version").Node.InnerText
+$version = (Select-Xml -Path ".\src\ShieldsUp\ShieldsUp.csproj" -XPath "//Version").Node.InnerText
 $publishDir = Join-Path $OutDir "v$version"
 
-Write-Host "== ControlCore v$version - publishing self-contained win-x64 ==" -ForegroundColor Cyan
+Write-Host "== ShieldsUp v$version - publishing self-contained win-x64 ==" -ForegroundColor Cyan
 
-dotnet publish ".\src\ControlCore\ControlCore.csproj" -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -o $publishDir
+dotnet publish ".\src\ShieldsUp\ShieldsUp.csproj" -c Release -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw "publish failed" }
 
 # Zip + checksum
-$zip = Join-Path $OutDir "ControlCore-v$version-win-x64.zip"
+$zip = Join-Path $OutDir "ShieldsUp-v$version-win-x64.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zip
 

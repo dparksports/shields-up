@@ -1,14 +1,17 @@
-# ControlCore
+# Shields Up
 
 A native Windows app (WinUI 3 / Windows App SDK on .NET 10) with the system-control
-feature set extracted from [AutoCommand](../autocommand1004): one administrator
-window for hardening, debloating and privacy — no firewall/Sysmon/monitor suite in tow.
+feature set extracted from [AutoCommand](../autocommand1004): one dark, always-elevated
+administrator window for hardening, firewall, debloating and privacy — no Sysmon /
+process-monitor suite in tow.
 
 ## What's inside
 
 | Page | What it does |
 |---|---|
-| 📡 Attack Surface | Stop/neuter SSTP + VPN miniports, ghost hotspots (WiFi Direct), KDNET kernel debug, WAN miniport cleanup |
+| ⚡ Quick Scan | One pass over a fresh install: miniports, Shield Up firewall, telemetry task, IPv6+UAC, logon task, bloatware, hibernation — checklist doubles as a live status dashboard |
+| 📡 Attack Surface | Four lists: SSTP/VPN backdoors + WAN miniports, ghost hotspots (WiFi Direct), KDNET kernel debug, WAN miniport cleanup |
+| 🛡 Firewall | Profiles (incl. Shield Up), inbound/outbound rule browser with group toggles, legacy AC-BLOCK rename, 🌐 Restore Internet panic button |
 | 📦 Bloatware | Uninstall Store bloatware (Outlook, Xbox, Teams, Copilot, OneDrive…) with a customizable list |
 | 📊 Telemetry | Official opt-outs (JSON key / env var / registry) per known phoning-home app, snapshot + revert |
 | 👁 Privacy | VPN services, WiFi Direct, kernel debug, `UsageDataReceiver` task, Defender tamper status |
@@ -18,33 +21,37 @@ window for hardening, debloating and privacy — no firewall/Sysmon/monitor suit
 | 🌙 Hibernation | Hibernate off/on, power state report, true (non-hybrid) shutdown |
 | 🔒 OS Hardening | LSA RunAsPPL, UAC max strictness, IPv6 kill switch, hosts file integrity + reset |
 | ✅ DBX Safety | EFI mount + SHA256 baseline drift, Authenticode bootloader check, DBX update download/apply, boot repair |
-| ⚙ Settings | Theme, launch-at-logon (scheduled task, highest privileges), Mark-of-the-Web unblock |
+| ⚙ Settings | Launch-at-logon (scheduled task, highest privileges), Mark-of-the-Web unblock |
+
+Dark theme only — the app frame (title bar) included.
 
 ## Architecture
 
 ```
-ControlCore.slnx
+ShieldsUp.slnx
 └── src/
-    ├── ControlCore.Core/     net10.0-windows classlib — all engine code (COM/WMI/P-Invoke/WinRT), zero UI
-    └── ControlCore/          WinUI 3 app — NavigationView shell + 11 pages (unpackaged, requireAdministrator)
+    ├── ShieldsUp.Core/     net10.0-windows classlib — all engine code (COM/WMI/P-Invoke/WinRT), zero UI
+    └── ShieldsUp/          WinUI 3 app — NavigationView shell + 13 pages (unpackaged, requireAdministrator)
 ```
 
 Design rules carried over from AutoCommand's `docs/TECHNICAL_NOTES.md`: zero PowerShell
 core (COM/WMI/P-Invoke; native CLI tools only through `ProcessRunner`), confirm-before-mutate,
 system-signed components never offered for removal, downloads gated by SHA256 + Authenticode,
-all state as plain JSON under `C:\ProgramData\ControlCore\` and `HKCU\Software\ControlCore`.
+all state as plain JSON under `C:\ProgramData\ShieldsUp\` and `HKCU\Software\ShieldsUp`.
 
-Shared state files (same names/formats as AutoCommand, new root): `bloatware_config.json`,
-`telemetry_state.json`, `update_freeze.json` + `freeze_backups\`, `efi_baseline.json`.
-ControlCore is independent of AutoCommand — install either or both; they never touch each
-other's state.
+State files (same names/formats as AutoCommand, new root): `bloatware_config.json`,
+`firewall_config.json`, `telemetry_state.json`, `update_freeze.json` + `freeze_backups\`,
+`efi_baseline.json`. Shields Up is independent of AutoCommand — install either or both;
+they never touch each other's state. Firewall rule names (`AC-BLOCK…`) are shared
+vocabulary: Shields Up's Restore Internet button manages the same block-rule fleet
+AutoCommand created, so it works on machines that ran either (or both).
 
 ## Build & run
 
 Requires the .NET 10 SDK and Windows 10 19041+ (admin elevation is requested at launch).
 
 ```
-dotnet build ControlCore.slnx
+dotnet build ShieldsUp.slnx
 ```
 
 Release build (self-contained folder + zip + SHA256SUMS, no Windows App SDK runtime
@@ -57,15 +64,16 @@ installer needed on the target machine):
 ## Notable ports from the WPF original
 
 - `TabControl` sidebar → `NavigationView`; WPF `App.xaml` design system → WinUI resource
-  dictionaries with native Light/Dark/System theming (`RequestedTheme`).
+  dictionaries, dark-only with the window content extended into the title bar.
 - All `MessageBox` call sites → `ContentDialog` helpers (`Dialogs.Inform/Confirm/Error`).
 - DataGrids → `CommunityToolkit.WinUI.UI.Controls.DataGrid`; trigger-based cell colors →
-  `IValueConverter` brushes in template columns.
-- `Dispatcher.Invoke` → `DispatcherQueue.TryEnqueue`; settings coupling to
+  `IValueConverter` brushes in template columns; WPF `CollectionViewSource` grouping →
+  group-then-name sort.
+- `Dispatcher.Invoke` → `DispatcherQueue.TryEnqueue`; the Settings coupling to
   `FreshSetupService`/`SecurityEnforcer` replaced by a self-contained `LogonTaskService`
   and a trimmed Settings page.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). ControlCore is derived from
+Apache License 2.0 — see [LICENSE](LICENSE). Shields Up is derived from
 AutoCommand; the derivation is recorded in [NOTICE](NOTICE).
