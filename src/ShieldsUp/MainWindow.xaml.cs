@@ -32,11 +32,28 @@ public sealed partial class MainWindow : Window
         // area instead of the system-drawn caption
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        ContentFrame.Navigated += (_, _) => ApplyPanelElevation();
+        // Some pages' visual trees aren't realized at Navigated-time — retry
+        // once Loaded fires so their panels get shadows too
+        ContentFrame.Navigated += OnNavigated;
         ConfigureWindowChrome();
         // Land on the first page instead of an empty frame
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
         Core.Services.AppLogger.Log("shell", "MainWindow created");
+    }
+
+    private void OnNavigated(object sender, NavigationEventArgs e)
+    {
+        if (ContentFrame.Content is FrameworkElement fe && !fe.IsLoaded)
+            fe.Loaded += OnPageLoadedForElevation;
+        else
+            ApplyPanelElevation();
+    }
+
+    private void OnPageLoadedForElevation(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+            fe.Loaded -= OnPageLoadedForElevation;
+        ApplyPanelElevation();
     }
 
     /// <summary>
