@@ -8,13 +8,33 @@
     mc:Ignorable="d"
     Title="Shields Up">
 
-    <NavigationView
-        x:Name="Nav" PaneTitle="Shields Up"
-        IsBackButtonVisible="Collapsed"
-        IsSettingsVisible="False"
-        RequestedTheme="Light"
-        SelectionChanged="Nav_SelectionChanged"
-        OpenPaneLength="220">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- White top bar (reference style): carries the app title, acts as the
+             drag region; the system caption buttons overlay its right edge -->
+        <Border x:Name="AppTitleBar" Grid.Row="0" Background="#FFFFFF"
+                BorderBrush="#ECECEC" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
+                <TextBlock Text="🛡" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" />
+                <TextBlock Text="Shields Up" FontFamily="Segoe UI Variable Display, Segoe UI"
+                           FontSize="13" FontWeight="SemiBold" Foreground="#1D1D1F"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <NavigationView
+            Grid.Row="1"
+            x:Name="Nav"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            IsTitleBarAutoPaddingEnabled="False"
+            RequestedTheme="Light"
+            SelectionChanged="Nav_SelectionChanged"
+            OpenPaneLength="220">
 
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Quick Scan" Tag="QuickScan">
@@ -95,4 +115,5 @@
         <Frame x:Name="ContentFrame" />
 
     </NavigationView>
+    </Grid>
 </Window>

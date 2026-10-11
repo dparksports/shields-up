@@ -31,6 +31,7 @@ public sealed partial class MainWindow : Window
         // Light theme: the white NavigationView XAML extends into the title bar
         // area instead of the system-drawn caption
         ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
         ContentFrame.Navigated += (_, _) => ApplyPanelElevation();
         ConfigureWindowChrome();
         // Land on the first page instead of an empty frame
