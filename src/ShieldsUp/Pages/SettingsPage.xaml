@@ -41,6 +41,21 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Footnote -->
+                <Border Style="{StaticResource CardPanel}" BorderThickness="0" Background="Transparent">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <TextBlock Text="Made with ❤️ in California" FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="© 2026 Dan Park · MagicPoint.ai" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="Licensed under the Apache License 2.0" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
         </Border>
