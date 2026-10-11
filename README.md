@@ -64,3 +64,8 @@ installer needed on the target machine):
 - `Dispatcher.Invoke` → `DispatcherQueue.TryEnqueue`; settings coupling to
   `FreshSetupService`/`SecurityEnforcer` replaced by a self-contained `LogonTaskService`
   and a trimmed Settings page.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). ControlCore is derived from
+AutoCommand; the derivation is recorded in [NOTICE](NOTICE).
