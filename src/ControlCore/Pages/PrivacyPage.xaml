@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ControlCore.Pages.PrivacyPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Loaded="Page_Loaded">
+
+    <Grid Padding="24,16,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="Privacy &amp; Tracking" Style="{StaticResource PageHeaderText}" VerticalAlignment="Center" />
+                <Button Content="↻ Refresh" Style="{StaticResource PrimaryButton}" Click="RefreshBtn_Click" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Privacy Toggles -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+
+                <!-- VPN Services -->
+                <Border Style="{StaticResource CardPanel}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="VPN Services" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="RasMan, IKEEXT, PolicyAgent, RemoteAccess" Style="{StaticResource SubtleText}" />
+                            <TextBlock x:Name="VpnStatusText" Text="Checking..." Style="{StaticResource SubtleText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="VpnDisableBtn" Content="Disable All" Style="{StaticResource DangerButton}" Click="VpnDisableBtn_Click" />
+                            <Button x:Name="VpnEnableBtn" Content="Enable All" Style="{StaticResource PrimaryButton}" Click="VpnEnableBtn_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- WiFi Direct -->
+                <Border Style="{StaticResource CardPanel}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="WiFi Direct Virtual Adapter" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="Microsoft Virtual WiFi adapter — can create hidden hotspots" Style="{StaticResource SubtleText}" />
+                            <TextBlock x:Name="WifiDirectStatusText" Text="Checking..." Style="{StaticResource SubtleText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Content="Disable" Style="{StaticResource DangerButton}" Click="WifiDirectDisableBtn_Click" />
+                            <Button Content="Enable" Style="{StaticResource PrimaryButton}" Click="WifiDirectEnableBtn_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Kernel Debug -->
+                <Border Style="{StaticResource CardPanel}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Kernel Debug Network" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="KDNET — kernel-level remote debugger access" Style="{StaticResource SubtleText}" />
+                            <TextBlock x:Name="KdnetStatusText" Text="Checking..." Style="{StaticResource SubtleText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Content="Disable" Style="{StaticResource DangerButton}" Click="KdnetDisableBtn_Click" />
+                            <Button Content="Enable" Style="{StaticResource PrimaryButton}" Click="KdnetEnableBtn_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Usage Data / Telemetry -->
+                <Border Style="{StaticResource CardPanel}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Usage Data &amp; Telemetry" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="UsageDataReceiver scheduled task — sends telemetry to Microsoft" Style="{StaticResource SubtleText}" />
+                            <TextBlock x:Name="UsageDataStatusText" Text="Checking..." Style="{StaticResource SubtleText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Content="Disable" Style="{StaticResource DangerButton}" Click="UsageDataDisableBtn_Click" />
+                            <Button Content="Enable" Style="{StaticResource PrimaryButton}" Click="UsageDataEnableBtn_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Tamper Protection -->
+                <Border Style="{StaticResource CardPanel}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Defender Tamper Protection" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="Prevents unauthorized changes to Windows Defender settings" Style="{StaticResource SubtleText}" />
+                            <TextBlock x:Name="TamperStatusText" Text="Checking..." Style="{StaticResource SubtleText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="16">
+                            <Button x:Name="TamperEnableBtn" Content="Enable in Windows Security"
+                                    Style="{StaticResource PrimaryButton}" Click="TamperEnableBtn_Click" />
+                            <TextBlock x:Name="TamperIcon" FontSize="24" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

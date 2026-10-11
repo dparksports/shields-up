@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ControlCore.Core/ControlCore.Core.csproj" />
+    <Project Path="src/ControlCore/ControlCore.csproj" />
+  </Folder>
+</Solution>

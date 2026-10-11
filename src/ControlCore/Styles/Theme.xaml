@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ControlCore design system: ported from AutoCommand's App.xaml palette to WinUI resource dictionaries.
+     Colors are defined for both Light and Dark; controls pick them up via ThemeResource. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="AccentBrush" Color="#1F8B4C" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#14683A" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#B3261E" />
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#8C1D18" />
+            <SolidColorBrush x:Key="WarnBrush" Color="#9A6700" />
+            <SolidColorBrush x:Key="OkBrush" Color="#1F8B4C" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#E3E3E3" />
+            <SolidColorBrush x:Key="PageHeaderTextBrush" Color="#1A1A1A" />
+            <SolidColorBrush x:Key="SubtleTextBrush" Color="#666666" />
+            <SolidColorBrush x:Key="RowAlternateBrush" Color="#F5F5F5" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="AccentBrush" Color="#34D17E" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#7FE8AE" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#F66E5E" />
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#FF9C90" />
+            <SolidColorBrush x:Key="WarnBrush" Color="#E7B10A" />
+            <SolidColorBrush x:Key="OkBrush" Color="#34D17E" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#1E1E1E" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#333333" />
+            <SolidColorBrush x:Key="PageHeaderTextBrush" Color="#F2F2F2" />
+            <SolidColorBrush x:Key="SubtleTextBrush" Color="#9A9A9A" />
+            <SolidColorBrush x:Key="RowAlternateBrush" Color="#252525" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- Text -->
+    <x:Double x:Key="PageHeaderSize">26</x:Double>
+
+    <Style x:Key="PageHeaderText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource PageHeaderSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="Foreground" Value="{ThemeResource PageHeaderTextBrush}" />
+    </Style>
+
+    <Style x:Key="SubtleText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{ThemeResource SubtleTextBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="SectionHeaderText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,4,0,8" />
+    </Style>
+
+    <!-- Cards: the port of AutoCommand's CardPanel + GroupBox look -->
+    <Style x:Key="CardPanel" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource CardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0,4,0,12" />
+    </Style>
+
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource AccentBrush}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,8" />
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource DangerBrush}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,8" />
+    </Style>
+
+    <Style x:Key="MonoText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Consolas,Cascadia Mono" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+</ResourceDictionary>

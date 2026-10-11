@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="ControlCore.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Loaded="Page_Loaded">
+
+    <Grid Padding="24,16,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Settings" Style="{StaticResource PageHeaderText}" Grid.Row="0" />
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel MaxWidth="680" HorizontalAlignment="Left">
+
+                <!-- Application Information -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock Text="Application Information" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="ControlCore — the Attack Surface, Bloatware, Telemetry, Privacy, Update Control, Tasks, Startup, Hibernation, OS Hardening and DBX Safety tools from AutoCommand, as a standalone native app."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Version:" FontWeight="SemiBold" />
+                            <TextBlock x:Name="VersionValueText" Text="…" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Appearance -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Appearance" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="Theme (applies immediately)" Style="{StaticResource SubtleText}" />
+                        <ComboBox x:Name="ThemeCombo" MinWidth="200" SelectionChanged="ThemeCombo_SelectionChanged">
+                            <ComboBoxItem Content="Use system setting" Tag="Default" />
+                            <ComboBoxItem Content="Light" Tag="Light" />
+                            <ComboBoxItem Content="Dark" Tag="Dark" />
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- Startup Behavior -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Startup Behavior" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="Launch ControlCore automatically when you log on (scheduled task with highest privileges — no extra UAC prompt)."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                        <CheckBox x:Name="LaunchOnStartupCheck" Content="Launch at logon"
+                                  Checked="LaunchOnStartupCheck_Checked" Unchecked="LaunchOnStartupCheck_Unchecked" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Unblock -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Unblock (Mark-of-the-Web removal)" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="Windows marks downloaded files with a Zone.Identifier stream — SmartScreen then warns on every launch. Removing the mark from an extracted zip restores normal behaviour."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="UnblockAppBtn" Content="Unblock this app's folder"
+                                    Style="{StaticResource PrimaryButton}" Click="UnblockAppBtn_Click" />
+                            <Button x:Name="UnblockFolderBtn" Content="Unblock another folder…"
+                                    Click="UnblockFolderBtn_Click" />
+                        </StackPanel>
+                        <TextBlock x:Name="UnblockStatusText" Text="" Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
