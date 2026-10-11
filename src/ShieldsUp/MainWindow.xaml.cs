@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
         ["Hibernation"] = typeof(HibernationPage),
         ["Hardening"] = typeof(HardeningPage),
         ["DbxSafety"] = typeof(DbxSafetyPage),
+        ["Unblock"] = typeof(UnblockPage),
         ["Settings"] = typeof(SettingsPage),
     };
 

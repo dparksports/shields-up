@@ -20,7 +20,7 @@
                 <Border Style="{StaticResource CardPanel}">
                     <StackPanel>
                         <TextBlock Text="Application Information" Style="{StaticResource SectionHeaderText}" />
-                        <TextBlock Text="Shields Up — Quick Scan, Attack Surface, Firewall, Bloatware, Telemetry, Privacy, Update Control, Tasks, Startup, Hibernation, OS Hardening and DBX Safety in one administrator window."
+                        <TextBlock Text="Shields Up — Quick Scan, Attack Surface, Firewall, Bloatware, Telemetry, Privacy, Update Control, Tasks, Startup, Hibernation, OS Hardening, DBX Safety and Unblock in one administrator window."
                                    Style="{StaticResource SubtleText}" TextWrapping="Wrap" Margin="0,0,0,8" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Version:" FontWeight="SemiBold" />
@@ -37,22 +37,6 @@
                                    Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
                         <CheckBox x:Name="LaunchOnStartupCheck" Content="Launch at logon"
                                   Checked="LaunchOnStartupCheck_Checked" Unchecked="LaunchOnStartupCheck_Unchecked" />
-                    </StackPanel>
-                </Border>
-
-                <!-- Unblock -->
-                <Border Style="{StaticResource CardPanel}">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Unblock (Mark-of-the-Web removal)" Style="{StaticResource SectionHeaderText}" />
-                        <TextBlock Text="Windows marks downloaded files with a Zone.Identifier stream — SmartScreen then warns on every launch. Removing the mark from an extracted zip restores normal behaviour."
-                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="UnblockAppBtn" Content="Unblock this app's folder"
-                                    Style="{StaticResource PrimaryButton}" Click="UnblockAppBtn_Click" />
-                            <Button x:Name="UnblockFolderBtn" Content="Unblock another folder…"
-                                    Click="UnblockFolderBtn_Click" />
-                        </StackPanel>
-                        <TextBlock x:Name="UnblockStatusText" Text="" Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
 

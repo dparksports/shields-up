@@ -10,7 +10,7 @@ process-monitor suite in tow.
 | Page | What it does |
 |---|---|
 | ⚡ Quick Scan | One pass over a fresh install: miniports, Shield Up firewall, telemetry task, IPv6+UAC, logon task, bloatware, hibernation — checklist doubles as a live status dashboard |
-| 📡 Attack Surface | Four lists: SSTP/VPN backdoors + WAN miniports, ghost hotspots (WiFi Direct), KDNET kernel debug, WAN miniport cleanup |
+| 📡 Attack Surface | Four lists: WAN miniport cleanup first, then SSTP/VPN backdoors, ghost hotspots (WiFi Direct), KDNET kernel debug |
 | 🛡 Firewall | Profiles (incl. Shield Up), inbound/outbound rule browser with group toggles, legacy AC-BLOCK rename, 🌐 Restore Internet panic button |
 | 📦 Bloatware | Uninstall Store bloatware (Outlook, Xbox, Teams, Copilot, OneDrive…) with a customizable list |
 | 📊 Telemetry | Official opt-outs (JSON key / env var / registry) per known phoning-home app, snapshot + revert |
@@ -21,7 +21,8 @@ process-monitor suite in tow.
 | 🌙 Hibernation | Hibernate off/on, power state report, true (non-hybrid) shutdown |
 | 🔒 OS Hardening | LSA RunAsPPL, UAC max strictness, IPv6 kill switch, hosts file integrity + reset |
 | ✅ DBX Safety | EFI mount + SHA256 baseline drift, Authenticode bootloader check, DBX update download/apply, boot repair |
-| ⚙ Settings | Launch-at-logon (scheduled task, highest privileges), Mark-of-the-Web unblock |
+| 🔓 Unblock | Mark-of-the-Web removal — strip Zone.Identifier marks from this app's folder or any folder |
+| ⚙ Settings | Launch-at-logon (scheduled task, highest privileges) |
 
 Visual theme ported from the EmojiWifi Windows reference: Apple-style light UI —
 `#007AFF` accent, white sidebar with `#E5F1FF` selected pills, `#F5F5F7` content over

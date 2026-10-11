@@ -24,7 +24,23 @@
         <ScrollViewer Grid.Row="1">
             <StackPanel MaxWidth="980" HorizontalAlignment="Left" Spacing="12">
 
-                <!-- List 1: SSTP / WAN Miniports -->
+                <!-- List 1: WAN Miniport Removal -->
+                <StackPanel ToolTipService.ToolTip="Remove all WAN Miniport phantom devices">
+                    <TextBlock Text="WAN Miniport Cleanup" Style="{StaticResource SectionHeaderText}" />
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+                            <TextBlock Text="Remove all WAN Miniports."
+                                       Style="{StaticResource SubtleText}" TextAlignment="Center" />
+                            <Button x:Name="RemoveAllMiniportsBtn" Content="Remove All Miniports"
+                                    Style="{StaticResource DangerButton}" Click="RemoveAllMiniportsBtn_Click"
+                                    HorizontalAlignment="Center" />
+                            <TextBlock x:Name="RemovalResultText" Text="" Style="{StaticResource SubtleText}"
+                                       TextAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- List 2: SSTP / WAN Miniports -->
                 <StackPanel ToolTipService.ToolTip="WAN Miniport SSTP — remote access attack surface">
                     <TextBlock Text="System VPN Backdoors" Style="{StaticResource SectionHeaderText}" />
                     <Border Style="{StaticResource CardPanel}">
@@ -54,7 +70,7 @@
                     </Border>
                 </StackPanel>
 
-                <!-- List 2: WiFi Direct -->
+                <!-- List 3: WiFi Direct -->
                 <StackPanel ToolTipService.ToolTip="WiFi Direct Hosted Network — hidden hotspot attack surface">
                     <TextBlock Text="Ghost Hotspots" Style="{StaticResource SectionHeaderText}" />
                     <Border Style="{StaticResource CardPanel}">
@@ -87,7 +103,7 @@
                     </Border>
                 </StackPanel>
 
-                <!-- List 3: KDNET -->
+                <!-- List 4: KDNET -->
                 <StackPanel ToolTipService.ToolTip="Kernel Debug Network Adapter (KDNET) — kernel-level access">
                     <TextBlock Text="Hacker Access Mode" Style="{StaticResource SectionHeaderText}" />
                     <Border Style="{StaticResource CardPanel}">
@@ -113,22 +129,6 @@
                                     <controls:DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
                                 </controls:DataGrid.Columns>
                             </controls:DataGrid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- List 4: WAN Miniport Removal -->
-                <StackPanel ToolTipService.ToolTip="Remove all WAN Miniport phantom devices">
-                    <TextBlock Text="WAN Miniport Cleanup" Style="{StaticResource SectionHeaderText}" />
-                    <Border Style="{StaticResource CardPanel}">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
-                            <TextBlock Text="Remove all WAN Miniports."
-                                       Style="{StaticResource SubtleText}" TextAlignment="Center" />
-                            <Button x:Name="RemoveAllMiniportsBtn" Content="Remove All Miniports"
-                                    Style="{StaticResource DangerButton}" Click="RemoveAllMiniportsBtn_Click"
-                                    HorizontalAlignment="Center" />
-                            <TextBlock x:Name="RemovalResultText" Text="" Style="{StaticResource SubtleText}"
-                                       TextAlignment="Center" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

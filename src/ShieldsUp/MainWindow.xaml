@@ -77,6 +77,11 @@
                     <FontIcon Glyph="&#x2705;" FontFamily="Segoe UI Emoji" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItem Content="Unblock" Tag="Unblock">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#x1F513;" FontFamily="Segoe UI Emoji" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
         </NavigationView.MenuItems>
 
         <NavigationView.FooterMenuItems>
