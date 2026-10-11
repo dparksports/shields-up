@@ -19,8 +19,8 @@
     <SolidColorBrush x:Key="DangerBrush" Color="#D70015" />
 
     <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="PageBackgroundBrush" Color="#F5F5F7" />
-    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="PageBackgroundBrush" Color="#ECF2F9" />
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FDFEFF" />
     <SolidColorBrush x:Key="CardBorderBrush" Color="#EBEBEB" />
     <SolidColorBrush x:Key="RowAlternateBrush" Color="#F6F8FA" />
 
@@ -60,11 +60,11 @@
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     </Style>
 
-    <!-- Cards: the reference CardStyle — white, radius 12, padding 20,
-         with a hint of drop shadow. ThemeShadow comes from the style; the
-         z-translation that reveals it is applied by MainWindow.ApplyCardElevation
-         (Translation isn't a DependencyProperty, so setters reject it). -->
-    <Style x:Key="CardPanel" TargetType="Border">
+    <!-- The tab content panel: one white elevated panel per page (reference
+         CardStyle), carrying the thin drop shadow. Sections inside are
+         outlined by the SectionPanel style below. The z-translation that
+         reveals the shadow is applied by MainWindow.ApplyPanelElevation. -->
+    <Style x:Key="ContentPanel" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -76,6 +76,16 @@
                 <ThemeShadow />
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Sections inside the content panel: outlined, flat (no shadow) -->
+    <Style x:Key="CardPanel" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="#F0F0F0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="Margin" Value="0,2,0,10" />
     </Style>
 
     <!-- The reference Button: #007AFF fill, white semibold text, radius 8 -->

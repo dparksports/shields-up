@@ -21,6 +21,7 @@
         </Grid>
 
         <!-- Four full-width lists -->
+<Border Style="{StaticResource ContentPanel}" Grid.Row="1">
         <ScrollViewer Grid.Row="1">
             <StackPanel MaxWidth="980" HorizontalAlignment="Left" Spacing="12">
 
@@ -135,5 +136,6 @@
 
             </StackPanel>
         </ScrollViewer>
+        </Border>
     </Grid>
 </Page>

@@ -39,6 +39,7 @@
         </Grid>
 
         <!-- Checklist (bird's-eye view) -->
+<Border Style="{StaticResource ContentPanel}" Grid.Row="2">
         <ScrollViewer Grid.Row="2">
             <ItemsControl x:Name="StepsList">
                 <ItemsControl.ItemTemplate>
@@ -66,6 +67,7 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
+        </Border>
 
         <!-- Footer -->
         <Border Grid.Row="3" Margin="0,14,0,0" Style="{StaticResource CardPanel}" Padding="12">

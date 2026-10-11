@@ -30,6 +30,7 @@
         </Grid>
 
         <!-- Startup Grid -->
+<Border Style="{StaticResource ContentPanel}" Grid.Row="1">
         <controls:DataGrid Grid.Row="1" x:Name="StartupGrid" AutoGenerateColumns="False"
                            IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
@@ -43,5 +44,6 @@
                 </MenuFlyout>
             </controls:DataGrid.ContextFlyout>
         </controls:DataGrid>
+        </Border>
     </Grid>
 </Page>

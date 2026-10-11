@@ -31,27 +31,32 @@ public sealed partial class MainWindow : Window
         // Light theme: the white NavigationView XAML extends into the title bar
         // area instead of the system-drawn caption
         ExtendsContentIntoTitleBar = true;
-        ContentFrame.Navigated += (_, _) => ApplyCardElevation();
+        ContentFrame.Navigated += (_, _) => ApplyPanelElevation();
         ConfigureWindowChrome();
         // Land on the first page instead of an empty frame
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
     }
 
     /// <summary>
-    /// CardPanel cards carry a ThemeShadow (set in the style); the z-translation
-    /// that makes it visible can't be — Translation is not a DependencyProperty,
-    /// so style setters reject it. Walk the page after each navigation instead.
+    /// ContentPanel pages carry a ThemeShadow (set in the style); two things the
+    /// style alone can't provide are done here after each navigation:
+    ///  - the z-translation that gives the shadow depth (Translation is not a
+    ///    DependencyProperty, so style setters reject it), and
+    ///  - an explicit shadow receiver (the page root) — an in-tree ThemeShadow
+    ///    without a receiver element silently renders nothing.
     /// </summary>
-    private void ApplyCardElevation()
+    private void ApplyPanelElevation()
     {
         DispatcherQueue.TryEnqueue(() =>
         {
             if (ContentFrame.Content is not FrameworkElement root) return;
-            var cardStyle = (Style)Application.Current.Resources["CardPanel"];
+            var panelStyle = (Style)Application.Current.Resources["ContentPanel"];
             foreach (var border in FindDescendants<Border>(root))
             {
-                if (ReferenceEquals(border.Style, cardStyle))
-                    border.Translation = new System.Numerics.Vector3(0, 0, 8);
+                if (!ReferenceEquals(border.Style, panelStyle)) continue;
+                border.Translation = new System.Numerics.Vector3(0, 0, 8);
+                if (border.Shadow is ThemeShadow shadow && shadow.Receivers.Count == 0)
+                    shadow.Receivers.Add(root);
             }
         });
     }

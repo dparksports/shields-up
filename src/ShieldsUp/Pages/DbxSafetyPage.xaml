@@ -28,6 +28,7 @@
         </Grid>
 
         <!-- Results -->
+<Border Style="{StaticResource ContentPanel}" Grid.Row="1">
         <ScrollViewer Grid.Row="1">
             <StackPanel>
 
@@ -97,5 +98,6 @@
 
             </StackPanel>
         </ScrollViewer>
+        </Border>
     </Grid>
 </Page>

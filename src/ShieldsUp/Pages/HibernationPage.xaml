@@ -13,6 +13,7 @@
 
         <TextBlock Text="Hibernation &amp; Shutdown" Style="{StaticResource PageHeaderText}" Grid.Row="0" />
 
+<Border Style="{StaticResource ContentPanel}" Grid.Row="1">
         <ScrollViewer Grid.Row="1">
             <StackPanel MaxWidth="640" HorizontalAlignment="Left">
 
@@ -59,5 +60,6 @@
 
             </StackPanel>
         </ScrollViewer>
+        </Border>
     </Grid>
 </Page>

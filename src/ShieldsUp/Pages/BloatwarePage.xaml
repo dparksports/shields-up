@@ -47,6 +47,7 @@
         </StackPanel>
 
         <!-- Apps List -->
+<Border Style="{StaticResource ContentPanel}" Grid.Row="2">
         <controls:DataGrid x:Name="AppsDataGrid" Grid.Row="2" AutoGenerateColumns="False"
                            IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
@@ -84,6 +85,7 @@
                 </controls:DataGridTemplateColumn>
             </controls:DataGrid.Columns>
         </controls:DataGrid>
+        </Border>
 
         <!-- Footer Info -->
         <Border Grid.Row="3" Margin="0,16,0,0" Style="{StaticResource CardPanel}" Padding="12">

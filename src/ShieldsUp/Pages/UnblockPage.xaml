@@ -12,6 +12,7 @@
 
         <TextBlock Text="Unblock" Style="{StaticResource PageHeaderText}" Grid.Row="0" />
 
+<Border Style="{StaticResource ContentPanel}" Grid.Row="1">
         <ScrollViewer Grid.Row="1">
             <StackPanel MaxWidth="680" HorizontalAlignment="Left">
 
@@ -42,5 +43,6 @@
 
             </StackPanel>
         </ScrollViewer>
+        </Border>
     </Grid>
 </Page>

@@ -15,7 +15,7 @@
                            Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
             </StackPanel>
 
-            <Border Style="{StaticResource CardPanel}">
+            <Border Style="{StaticResource ContentPanel}">
                 <StackPanel>
                     <Grid Margin="0,0,0,8" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
