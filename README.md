@@ -2,122 +2,137 @@
 
 ![Shields Up](docs/img/hero.png)
 
-**Shields Up** is a native Windows app (WinUI 3 / Windows App SDK on .NET 10) that puts
-the system-control toolset of AutoCommand into one fast, always-elevated administrator
-window: firewall profiles, attack-surface removal, bloatware cleanup, telemetry
-opt-outs, update freezing, task and startup control, OS hardening, UEFI revocation
-safety — every action confirmed before it mutates, snapshotted, and reversible.
+A free, open-source control center for Windows that strips out the things you never
+asked for — preinstalled apps, background telemetry, hidden remote-access features —
+and shows you exactly what it's about to change before it changes anything.
 
-Unpackaged, ~90 MB self-contained, no installer, no background services, no telemetry.
+No installer. No account. No background processes. It runs when you open it and is
+gone when you close it.
 
 ---
 
-## The tools
+## Why you'd want this
+
+**Windows arrives with company on board.** Games you didn't install, apps phoning
+home with usage statistics, VPN and remote-access plumbing most people will never
+use — all of it sitting there, consuming resources and widening the door.
+
+Shields Up gives you one window with plain-English controls for all of it:
+
+- **🧹 Remove the junk** — uninstall the preinstalled apps you don't want
+  (Outlook, Xbox, Teams, Copilot, OneDrive, …), with a list you can edit.
+- **📵 Stop the phone-home** — apply the *official* opt-out switch for software
+  known to collect usage data, and check it actually stopped.
+- **🚪 Close the side doors** — turn off Windows' built-in VPN backdoors, hidden
+  hotspot adapters, and kernel-debugging access that remote tools could abuse.
+- **🧊 Freeze annoying updaters** — stop an app from replacing itself every week,
+  without breaking the app. Unfreeze anytime.
+- **🛡 Set the firewall in one click** — sensible presets from strict to
+  easy-going, a browser for every rule, and a panic button that undoes all of it.
+- **✅ One fresh-install pass** — Quick Scan checks what's already done and
+  finishes the rest in order.
+
+Every action asks first. Most actions have an undo. Nothing is hidden.
+
+## Who makes this
+
+**Dan Park — MagicPoint.ai, California.** Shields Up grew out of
+[AutoCommand](https://github.com/), a Windows security toolkit, by pulling out the
+parts a typical PC owner actually wants and leaving the analyst tooling behind.
+The app carries the same credit in Settings → the footnote at the bottom of the page.
+
+## "Why should I run an app from a publisher I don't know?"
+
+You shouldn't — not on faith. Don't take anyone's word for it, including ours.
+Here's what you can **check** instead:
+
+1. **Read every line.** The complete source is in this repository under the
+   Apache 2.0 license. There is no compiled mystery: what you download is built
+   from exactly this code.
+2. **Watch what it does.** No installer — you unzip a folder and run an exe.
+   No background service, no task in Task Scheduler (unless *you* turn on
+   "launch at logon"), nothing in your tray. Close it, and it's not running.
+3. **Watch the network.** The app makes exactly two kinds of connection, both
+   only when *you* click a button: the update check talks to GitHub, and the
+   DBX Safety page downloads a Microsoft update when asked. That's the whole list.
+   No telemetry, no analytics, no "anonymous statistics", no accounts.
+4. **Verify the download.** Every release ships a `SHA256SUMS.txt`; the app's
+   own update checker verifies against it before trusting a download — you can
+   do the same with `certutil -hashfile <zip> SHA256` before you ever run it.
+5. **See changes before they happen.** Nothing on any page executes without a
+   confirmation that says what will change, and the risky corners (Windows'
+   own signed components, for example) are locked out entirely.
+6. **Remove everything.** Delete the folder and the app is gone. Its settings
+   live in one place — `C:\ProgramData\ShieldsUp` — delete that too and there
+   is no trace left.
+
+**About that blue "unknown publisher" warning:** it appears because the app is
+not yet code-signed — a certificate that costs real money and ties the binary to
+a verified identity. Until releases are signed (planned), Windows will warn on
+first run. That warning is Windows doing its job; the sections above are ours.
+
+**Why it asks for administrator:** the whole point is managing firewall rules,
+system services, and device drivers — Windows requires admin for those. A
+version that didn't ask couldn't do what it promises.
+
+## What's inside
 
 ![The fourteen tools](docs/img/features.png)
 
-| Tool | What it does |
+| Tool | For you, that means |
 |---|---|
-| ⚡ **Quick Scan** | One pass over a fresh Windows install — miniports, Shield Up firewall, telemetry task, IPv6 + UAC, logon task, bloatware, hibernation. The checklist doubles as a live status dashboard, and every step reuses the exact engine behind its dedicated page. |
-| 📡 **Attack Surface** | A counts strip up top (miniports / WiFi Direct / KDNET / SSTP state — green when clean, amber when exposed), then four full-width lists: WAN miniport cleanup, SSTP/VPN backdoor neutering, ghost-hotspot (WiFi Direct) control, KDNET kernel-debug removal. |
-| 🛡 **Firewall** | Profile presets (Shield Up / Gaming / Office / Home / Public Strict) via `INetFwPolicy2` COM, an inbound/outbound rule browser with **click-to-sort on any column** and group toggles, legacy `AC-BLOCK` rule migration, and a 🌐 **Restore Internet** panic button that disables the whole block-rule fleet at once. |
-| 📦 **Bloatware** | Uninstalls Store bloat (Outlook, Xbox, Teams, Copilot, OneDrive, …) against a user-editable list — defaults ship with the app, your opt-outs and additions persist in JSON. |
-| 📊 **Telemetry** | Applies each vendor's *own* documented opt-out (settings key, env var, or policy) for known phoning-home software, snapshots the previous value, and reverts exactly. Includes a DNS-cache "still beaconing?" check. |
-| 👁 **Privacy** | VPN services (RasMan/IKEEXT/PolicyAgent/RemoteAccess), WiFi Direct adapters, kernel debug, the `UsageDataReceiver` scheduled task, Defender tamper-protection status. |
-| ❄ **Update Control** | Freezes self-updating apps in place: NTFS deny ACE on the exe (delete/write denied, run untouched), original ACL saved with `icacls` and restored on thaw. Windows binaries are refused. |
-| 📋 **Tasks** | Full Task Scheduler browser via COM — every folder including hidden tasks; run, stop, enable, disable, delete. |
-| 🚀 **Startup** | Registry Run keys (HKCU + HKLM) and Startup folders, with delete. |
-| 🌙 **Hibernation** | `powercfg` hibernate off/on, available-power-states report, and a true non-hybrid shutdown. |
-| 🔒 **OS Hardening** | LSA `RunAsPPL`, UAC maximum strictness, the IPv6 kill switch (`DisabledComponents=0xFF`), and hosts-file integrity check + reset. |
-| ✅ **DBX Safety** | Mounts the EFI partition, SHA256-baselines every boot file and reports drift, Authenticode-verifies the bootloader (Sysinternals sigcheck, downloaded only after signature gating), parses/applies Microsoft DBX revocation updates, and repairs the boot files with `bcdboot`. |
-| 🔓 **Unblock** | Strips Mark-of-the-Web (`Zone.Identifier`) from this app's folder or any folder you pick — the fix for SmartScreen nagging on every launch of an extracted zip. |
-| ⚙ **Settings** | Launch-at-logon scheduled task (highest privileges, no extra UAC prompt), in-app update check against the GitHub release, version/about, and the license footnote. |
+| ⚡ **Quick Scan** | One button for a fresh PC: runs the checklist below, tells you what's already done. |
+| 📡 **Attack Surface** | A green/amber count of every hidden network entry point, then one-click shutoff for each kind. |
+| 🛡 **Firewall** | Presets, every rule in a sortable list, and **Restore Internet** — one button that undoes all blocking if something broke. |
+| 📦 **Bloatware** | Uninstall the preinstalled apps; edit the list; nothing system-critical is ever offered. |
+| 📊 **Telemetry** | The official opt-out for each known data-collecting app, with an undo back to the previous setting. |
+| 👁 **Privacy** | VPN services, hidden hotspot adapters, kernel debug, the Windows feedback task — each switchable. |
+| ❄ **Update Control** | Freeze an app at its current version; its updater stops working, the app keeps working. |
+| 📋 **Tasks** | Everything Windows has scheduled, including hidden items — run, stop, disable, delete. |
+| 🚀 **Startup** | What launches at boot, from where, with delete. |
+| 🌙 **Hibernation** | Remove the hiberfile (or bring it back), and a true full shutdown. |
+| 🔒 **OS Hardening** | The four big Windows security switches in plain language, plus a hosts-file check. |
+| ✅ **DBX Safety** | Verifies your boot files haven't been tampered with and applies Microsoft's revocation updates. |
+| 🔓 **Unblock** | Removes the "downloaded from the internet" mark that makes Windows nag on extracted files. |
+| ⚙ **Settings** | Start-at-logon (optional), check for updates, version info. |
 
-## Staying current
+## Try it
 
-**Settings → Updates → Check for updates** compares your build against the latest
-GitHub release. When a newer version exists, one click downloads the release zip into
-your Downloads folder **and verifies its SHA256 against the release's `SHA256SUMS.txt`**
-before it's declared valid — a mismatched file is deleted, not kept. Install is
-deliberately boring: extract, run the new exe. (A running elevated exe can't replace
-itself, and unsigned self-replacement isn't something to hide from the user.)
+1. Download `ShieldsUp-v<date>-win-x64.zip` from [releases](https://github.com/dparksports/shields-up/releases/latest).
+2. (Optional, encouraged) check the hash against `SHA256SUMS.txt`.
+3. Extract anywhere and run `ShieldsUp.exe`. Windows will ask for permission — that's the admin rights from above.
+4. Start with **Quick Scan** and read before you click.
 
-Versions are their **build date** (`2026.10.11` = released that day) — `publish.ps1`
-stamps the date automatically, so a release tag always tells you how fresh it is.
+**Uninstalling** = deleting the folder (and `C:\ProgramData\ShieldsUp` if you want the settings gone too).
 
-## Architecture
+---
+
+## For developers
 
 ![Architecture](docs/img/architecture.png)
 
-Two projects, one hard boundary:
-
-```
-ShieldsUp.slnx
-└── src/
-    ├── ShieldsUp.Core/   net10.0-windows classlib — every engine, zero UI types
-    └── ShieldsUp/        WinUI 3 app — NavigationView shell + 14 pages
-```
-
-**Design rules**, inherited from AutoCommand's technical notes and enforced in code:
-
-- **Zero-PowerShell core** — COM, WMI, P/Invoke and WinRT only; native CLI tools
-  (`powercfg`, `bcdedit`, `schtasks`, `icacls`, `mountvol`, `netsh`) exclusively through
-  one audited `ProcessRunner`. The single PowerShell exception is UEFI dbx application
-  via `Set-SecureBootUEFI`, which has no native alternative.
-- **Confirm-before-mutate** — every state-changing action goes through a confirmation
-  dialog that says what will happen.
-- **System-signed components are never offered for removal** — the bloatware and
-  freeze engines refuse Windows binaries outright.
-- **Downloads are integrity-gated** — SHA256 recorded, then Microsoft Authenticode
-  verified (tools) or checked against the release checksums (updates) before use;
-  failures are deleted.
-- **State is plain JSON** under `C:\ProgramData\ShieldsUp\` (`bloatware_config.json`,
-  `firewall_config.json`, `telemetry_state.json`, `update_freeze.json` + ACL backups,
-  `efi_baseline.json`) with preferences and window size in
-  `HKCU\Software\ShieldsUp`. Same file formats as AutoCommand, namespaced — the two
-  apps never touch each other's state.
-- **Diagnostics** — `AppLogger` writes sessions, navigations and every caught exception
-  to `C:\ProgramData\ShieldsUp\logs\app.log`, and WER LocalDumps is registered so
-  native crashes leave `.dmp` files in `logs\dumps`.
-
-Firewall block rules use the shared `AC-BLOCK-*` naming vocabulary, so Shields Up's
-Restore Internet button manages the same fleet AutoCommand created — safe on machines
-that have run either or both.
-
-## Visual design
-
-The UI is a from-scratch WinUI 3 port of the EmojiWifi Windows reference: Apple-style
-light theme — `#007AFF` accent, white sidebar with `#E5F1FF` selected pills, one
-elevated rounded content panel per tab with a thin `ThemeShadow` drop shadow, tinted
-inset sections, a white top bar that doubles as the window drag region, and a window
-that opens at a usable 1284×850 and **remembers your last size** across runs.
-
-## Build & run
-
-Requires the .NET 10 SDK and Windows 10 19041+ (the app requests admin elevation).
+Native WinUI 3 / Windows App SDK on .NET 10, two projects: `ShieldsUp.Core`
+(the entire engine — COM/WMI/P-Invoke/WinRT, zero UI types, zero PowerShell;
+native CLI tools only through one audited `ProcessRunner`) and `ShieldsUp`
+(the shell + 14 pages). State is plain JSON under
+`C:\ProgramData\ShieldsUp` (same file formats as AutoCommand, namespaced);
+sessions, navigation, and exceptions log to `logs\app.log` with WER local
+dumps registered for native crashes. The update checker compares against
+`releases/latest` and SHA256-verifies downloads against `SHA256SUMS.txt`.
+Versions are build dates, stamped automatically by `publish.ps1`.
 
 ```powershell
 dotnet build ShieldsUp.slnx          # build
 ./publish.ps1                        # self-contained win-x64 folder + zip + SHA256SUMS
 ```
 
-`publish.ps1` stamps the version with today's date, publishes to
-`publish\v<date>\`, and zips as `ShieldsUp-v<date>-win-x64.zip` with a
-`SHA256SUMS.txt`.
-
-### Smart App Control / SmartScreen
-
-Unsigned builds have no publisher reputation, so Smart App Control (when set to *On*)
-may block a freshly built exe outright — there is no "run anyway" for that dialog.
-For personal use, run a build SAC has already accepted or disable SAC (permanent per
-Windows install). For distribution, sign the release: Azure Artifact Signing
-(formerly Trusted Signing) at $9.99/month is the right-sized option for an app like
-this — a `signtool` step in `publish.ps1` before the zip makes every build pass.
+Unsigned builds may be blocked by Smart App Control; for distribution guidance
+(Azure Artifact Signing, ~$9.99/mo) see the wiki or contact the author.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). Shields Up is derived from AutoCommand;
-the derivation is recorded in [NOTICE](NOTICE).
+Apache License 2.0 — see [LICENSE](LICENSE). Derived from AutoCommand; the
+derivation is recorded in [NOTICE](NOTICE).
 
 ---
 
