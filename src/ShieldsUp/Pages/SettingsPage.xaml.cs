@@ -1,3 +1,4 @@
+#nullable enable
 using System.Diagnostics;
 using ShieldsUp.Core.Services;
 
@@ -155,26 +156,44 @@ public sealed partial class SettingsPage : Page
         VerifyInstallBtn.IsEnabled = false;
         VerifyStatusText.Text = "Checking against the GitHub release…";
         var phase = new Progress<string>(msg => VerifyStatusText.Text = msg);
+        var clock = new System.Diagnostics.Stopwatch();
+        clock.Start();
+        AppLogger.LogVerify($"── button clicked (app v{Core.Services.UpdateCheckService.CleanVersion(Core.Services.UpdateCheckService.GetCurrentVersion())}) — trace: {AppLogger.VerifyLogFilePath}");
         try
         {
             var report = await _updates.VerifyInstallAsync(null, phase);
+            AppLogger.LogVerify($"UI: core check returned in {clock.ElapsedMilliseconds}ms — zip={(report.ZipPath ?? "none")}, " +
+                                $"error={(string.IsNullOrEmpty(report.Error) ? "none" : report.Error)}");
 
-            // Zip not found in Downloads — offer to point at it directly
+            // Zip not found in Downloads — ask for it with the shell dialog;
+            // the WinRT picker throws COMException in an elevated, unpackaged app
             if (report.ZipPath == null && string.IsNullOrEmpty(report.Error))
             {
-                var picker = new Windows.Storage.Pickers.FileOpenPicker { SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads };
-                picker.FileTypeFilter.Add(".zip");
-                WinRT.Interop.InitializeWithWindow.Initialize(picker,
-                    WinRT.Interop.WindowNative.GetWindowHandle(App.MainWnd));
-                var file = await picker.PickSingleFileAsync();
-                if (file != null)
+                VerifyStatusText.Text = "Original zip not found in Downloads — pick it for the full file check, or Cancel for the version check only.";
+                AppLogger.LogVerify("UI: opening the file dialog…");
+                string? picked = Helpers.FileDialogs.PickOpenFile(
+                    WinRT.Interop.WindowNative.GetWindowHandle(App.MainWnd),
+                    "Pick the Shields Up release zip you downloaded",
+                    "Shields Up release zip", ".zip");
+                AppLogger.LogVerify($"UI: file dialog returned {(picked ?? "cancel/unavailable")} after {clock.ElapsedMilliseconds}ms");
+                if (picked != null)
                 {
                     VerifyStatusText.Text = "Checking the selected zip…";
-                    report = await _updates.VerifyInstallAsync(file.Path);
+                    report = await _updates.VerifyInstallAsync(picked, phase);
+                    AppLogger.LogVerify($"UI: re-check with selected zip returned in {clock.ElapsedMilliseconds}ms — error={(string.IsNullOrEmpty(report.Error) ? "none" : report.Error)}");
                 }
             }
 
             VerifyStatusText.Text = RenderVerifyReport(report);
+            AppLogger.LogVerify($"── done in {clock.ElapsedMilliseconds}ms — status rendered");
+        }
+        catch (Exception ex)
+        {
+            // The status line must never go stale — a stuck "Checking…" here
+            // previously read as the whole feature hanging
+            AppLogger.LogException("verify install", ex);
+            AppLogger.LogVerifyException($"after {clock.ElapsedMilliseconds}ms", ex);
+            VerifyStatusText.Text = $"⚠ Verification could not complete: {ex.Message}";
         }
         finally
         {

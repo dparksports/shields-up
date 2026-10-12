@@ -19,9 +19,27 @@ public static class AppLogger
     public static string LogFilePath => Path.Combine(LogsDir, "app.log");
     public static string DumpsDir => Path.Combine(LogsDir, "dumps");
 
+    /// <summary>Mirrors of every LogVerify line — one small file for diagnosing a stalled verify run.</summary>
+    public static string VerifyLogFilePath => Path.Combine(LogsDir, "verify.log");
+
     public static void Log(string category, string message)
     {
         Write($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{category}] {message}");
+    }
+
+    /// <summary>
+    /// Step-by-step trace for the verify-install flow. Each line goes to
+    /// app.log as usual and is mirrored to logs\verify.log.
+    /// </summary>
+    public static void LogVerify(string message)
+    {
+        Write($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [verify] {message}");
+        Append(VerifyLogFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}");
+    }
+
+    public static void LogVerifyException(string context, Exception ex)
+    {
+        LogVerify($"EXCEPTION {context}\r\n{ex}");
     }
 
     public static void LogException(string context, Exception ex)
@@ -40,19 +58,24 @@ public static class AppLogger
 
     private static void Write(string line)
     {
+        Append(LogFilePath, line);
+    }
+
+    private static void Append(string path, string line)
+    {
         try
         {
             lock (Gate)
             {
                 Directory.CreateDirectory(LogsDir);
                 // Keep one generation: rotate past 2 MB
-                if (File.Exists(LogFilePath) && new FileInfo(LogFilePath).Length > 2_000_000)
+                if (File.Exists(path) && new FileInfo(path).Length > 2_000_000)
                 {
-                    string old = LogFilePath + ".old";
+                    string old = path + ".old";
                     if (File.Exists(old)) File.Delete(old);
-                    File.Move(LogFilePath, old);
+                    File.Move(path, old);
                 }
-                File.AppendAllText(LogFilePath, line + "\r\n", Encoding.UTF8);
+                File.AppendAllText(path, line + "\r\n", Encoding.UTF8);
             }
         }
         catch

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Text;
 using ShieldsUp.Core.Helpers;
 using ShieldsUp.Core.Models;
@@ -8,7 +9,7 @@ namespace ShieldsUp.Pages;
 public sealed partial class FirewallPage : Page
 {
     private List<FirewallRuleItem> _currentRules = new();
-    private CommunityToolkit.WinUI.UI.Controls.DataGridColumn _sortedColumn;
+    private CommunityToolkit.WinUI.UI.Controls.DataGridColumn? _sortedColumn;
 
     public FirewallPage()
     {
@@ -213,7 +214,7 @@ public sealed partial class FirewallPage : Page
     {
         if (ProfileCombo == null || ProfileCombo.SelectedIndex <= 0) return;
 
-        string profileName = ((ComboBoxItem)ProfileCombo.SelectedItem).Content.ToString();
+        string profileName = ((ComboBoxItem)ProfileCombo.SelectedItem).Content.ToString() ?? "";
 
         if (!await Helpers.Dialogs.Confirm(
                 $"Apply '{profileName}' profile?\n\nThis will modify your Windows Defender Firewall rules.",
