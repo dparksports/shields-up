@@ -57,7 +57,7 @@ for label, is_accent in chips:
             color=ACCENT_D if is_accent else TEXT,
             fontweight="semibold" if is_accent else "normal", ha="center", va="center")
     x += w + 14
-ax.text(389, 84, "Extracted from AutoCommand · native WinUI 3 · zero PowerShell core",
+ax.text(389, 84, "Date-versioned releases · in-app update check · zero PowerShell core",
         fontsize=13, color=SUBTLE, va="center")
 plt.savefig("docs/img/hero.png", bbox_inches="tight", pad_inches=0.25, facecolor=PAGE)
 plt.close()
@@ -90,7 +90,7 @@ ax.text(GAP, H-52, "Fourteen tools, one window", fontsize=26, fontweight="bold",
 ax.text(GAP, H-84, "Every action reuses the exact engine behind its page — the checklist never drifts from the tools.",
         fontsize=13, color=SUBTLE)
 
-cards = feats + [("⚙", "Settings", "Launch-at-logon task, about + Apache-2.0 license footnote", SUBTLE)]
+cards = feats + [("⚙", "Settings", "Launch-at-logon, in-app update check via GitHub releases, Apache-2.0 footnote", SUBTLE)]
 for i, (emoji, name, desc, col) in enumerate(cards):
     c, r = i % cols, i // cols
     x = GAP + c*(CW+GAP)
@@ -127,12 +127,12 @@ for chip in chips:
 ax.annotate("", xy=(490, 456), xytext=(490, 508), arrowprops=dict(arrowstyle="-|>", lw=2, color=SUBTLE))
 ax.text(505, 482, "direct engine calls", fontsize=10.5, color=SUBTLE)
 
-rbox(ax, 90, 330, 800, 120, CARD, BORDER, r=12)
+rbox(ax, 90, 264, 800, 186, CARD, BORDER, r=12)
 ax.text(110, 416, "ShieldsUp.Core", fontsize=17, fontweight="bold", color=TEXT, va="center")
 ax.text(110, 392, "Engine class library — zero UI types, zero PowerShell", fontsize=11.5, color=SUBTLE, va="center")
 core = ["FirewallService (COM)", "TaskSchedulerService", "AppManagerService", "UpdateFreezeService",
         "TelemetryRulesService", "QuickScanService", "WanMiniportRemover", "RegistryHelper",
-        "ServiceHelper", "DbxRemediator", "AppLogger"]
+        "ServiceHelper", "DbxRemediator", "UpdateCheckService", "AppLogger"]
 x = 110; yy = 342
 for svc in core:
     w = 20 + len(svc)*7.6
@@ -142,8 +142,8 @@ for svc in core:
     ax.text(x+w/2, yy+13, svc, fontsize=9.2, color=TEXT, ha="center", va="center")
     x += w + 7
 
-ax.annotate("", xy=(490, 224), xytext=(490, 324), arrowprops=dict(arrowstyle="-|>", lw=2, color=SUBTLE))
-ax.text(505, 272, "COM · WMI · P/Invoke · WinRT", fontsize=10.5, color=SUBTLE)
+ax.annotate("", xy=(490, 224), xytext=(490, 258), arrowprops=dict(arrowstyle="-|>", lw=2, color=SUBTLE))
+ax.text(505, 240, "COM · WMI · P/Invoke · WinRT", fontsize=10.5, color=SUBTLE)
 
 rbox(ax, 90, 70, 800, 148, CARD, BORDER, r=12)
 ax.text(110, 186, "Windows", fontsize=17, fontweight="bold", color=TEXT, va="center")
