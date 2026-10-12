@@ -144,4 +144,76 @@ public sealed partial class SettingsPage : Page
         await Windows.System.Launcher.LaunchUriAsync(
             new Uri(Core.Services.UpdateCheckService.ReleasePage));
     }
+
+    // -----------------------------------------------------------------------
+    // Verify this install — version vs release, zip hash vs SHA256SUMS,
+    // every release file present with the expected size
+    // -----------------------------------------------------------------------
+
+    private async void VerifyInstallBtn_Click(object sender, RoutedEventArgs e)
+    {
+        VerifyInstallBtn.IsEnabled = false;
+        VerifyStatusText.Text = "Checking against the GitHub release…";
+        try
+        {
+            var report = await _updates.VerifyInstallAsync();
+
+            // Zip not found in Downloads — offer to point at it directly
+            if (report.ZipPath == null && string.IsNullOrEmpty(report.Error))
+            {
+                var picker = new Windows.Storage.Pickers.FileOpenPicker { SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Downloads };
+                picker.FileTypeFilter.Add(".zip");
+                WinRT.Interop.InitializeWithWindow.Initialize(picker,
+                    WinRT.Interop.WindowNative.GetWindowHandle(App.MainWnd));
+                var file = await picker.PickSingleFileAsync();
+                if (file != null)
+                    report = await _updates.VerifyInstallAsync(file.Path);
+            }
+
+            VerifyStatusText.Text = RenderVerifyReport(report);
+        }
+        finally
+        {
+            VerifyInstallBtn.IsEnabled = true;
+        }
+    }
+
+    private static string Mark(bool ok) => ok ? "✓" : "⚠";
+    private static string Mark(bool? okOrUnknown) => okOrUnknown == null ? "–" : okOrUnknown == true ? "✓" : "⚠";
+
+    private static string RenderVerifyReport(Core.Services.UpdateCheckService.InstallVerifyReport r)
+    {
+        var sb = new System.Text.StringBuilder();
+        if (!string.IsNullOrEmpty(r.Error))
+        {
+            sb.Append($"⚠ Verification failed: {r.Error}");
+            return sb.ToString();
+        }
+
+        sb.AppendLine($"{Mark(r.VersionMatchesLatest)} Version — running {r.RunningVersion}, latest release {r.LatestTag ?? "unknown"}"
+                      + (r.UpdateAvailable ? " (update available)" : ""));
+
+        if (r.ZipPath == null)
+        {
+            sb.Append("– Original zip — not found in Downloads and none selected. Version check only; " +
+                      "pick the zip you downloaded (or use Download & verify) for the full file check.");
+            return sb.ToString();
+        }
+
+        sb.AppendLine($"{Mark(r.ZipHashMatches)} Zip SHA256 — {(r.ZipHashMatches == null
+            ? "no SHA256SUMS.txt on the release to compare against"
+            : $"{r.ZipSha256?.ToLowerInvariant()} {(r.ZipHashMatches == true ? "matches the release checksum" : "DOES NOT MATCH the release checksum")}")}");
+
+        if (r.FilesExpected > 0)
+        {
+            sb.AppendLine($"{Mark(r.FilesOk)} Install files — {r.FilesMatching}/{r.FilesExpected} from the release present with the expected size");
+            foreach (var p in r.Problems)
+                sb.AppendLine($"    ⚠ {p}");
+            if (r.Problems.Count >= 10)
+                sb.AppendLine("    (list capped at 10)");
+        }
+
+        sb.Append(r.OverallOk ? "✓ This install matches the release." : "⚠ This install differs from the release — see above.");
+        return sb.ToString();
+    }
 }

@@ -66,8 +66,11 @@ instead of trusted:
   the update check talks to GitHub; the DBX Safety page downloads a Microsoft update
   when asked. No telemetry, no analytics, no accounts.
 - **Verify the download.** Every release ships `SHA256SUMS.txt`
-  (`certutil -hashfile <zip> SHA256` before you run anything). The app's own update
-  checker does the same check before trusting a download.
+  (`certutil -hashfile <zip> SHA256` before you run anything). Settings →
+  **Verify this install** does the whole check in-app: your version against the
+  release, the zip's SHA256 against the published checksum, and every release
+  file in your folder with the expected size. The app's own update checker
+  runs the same check before trusting a download.
 - **See changes before they happen.** Nothing executes without a confirmation that
   says what will change — and Windows' own signed components are locked out entirely.
 - **Remove everything.** Delete the folder, delete `C:\ProgramData\ShieldsUp`, and
@@ -104,7 +107,9 @@ device drivers requires it. A version that didn't ask couldn't do what it promis
 ## Try it
 
 1. Download the zip from [releases](https://github.com/dparksports/shields-up/releases/latest).
-2. (Optional, encouraged) check the hash against `SHA256SUMS.txt`.
+2. (Optional, encouraged) check the hash against `SHA256SUMS.txt` — or, easier:
+   after your first run, press **Verify this install** in Settings and the app
+   does the whole check for you.
 3. Extract anywhere and run `ShieldsUp.exe`. Windows will ask for permission — see admin, above.
 4. Start with **Quick Scan**, and read before you click.
 

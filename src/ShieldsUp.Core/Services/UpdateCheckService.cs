@@ -46,6 +46,128 @@ public partial class UpdateCheckService
         Timeout = TimeSpan.FromSeconds(30)
     };
 
+    /// <summary>
+    /// Integrity report for the running installation: version vs the latest
+    /// release, the original zip's SHA256 vs the release checksum, and every
+    /// release file present in the install folder with the expected size.
+    /// </summary>
+    public sealed class InstallVerifyReport
+    {
+        public string RunningVersion { get; init; } = "";
+        public string? LatestTag { get; init; }
+        public bool VersionMatchesLatest { get; init; }
+        public bool UpdateAvailable { get; init; }
+        public string? ZipPath { get; init; }          // null = zip not found (UI may offer a picker)
+        public bool? ZipHashMatches { get; init; }     // null = no checksum published to compare
+        public string? ZipSha256 { get; init; }
+        public int FilesExpected { get; init; }
+        public int FilesMatching { get; init; }
+        public List<string> Problems { get; init; } = new(); // missing / size-mismatch, capped
+        public string Error { get; init; } = "";
+
+        public bool FilesOk => FilesExpected > 0 && FilesMatching == FilesExpected;
+        public bool OverallOk => string.IsNullOrEmpty(Error)
+                                 && VersionMatchesLatest
+                                 && ZipHashMatches != false
+                                 && FilesOk;
+    }
+
+    /// <summary>
+    /// Verifies the running installation against the latest GitHub release.
+    /// Finds the release zip in Downloads (or accepts an explicit path), hashes
+    /// it against the release's SHA256SUMS.txt, and compares every entry in
+    /// the zip (name + size) against the installed folder.
+    /// </summary>
+    public async Task<InstallVerifyReport> VerifyInstallAsync(string? zipOverride = null)
+    {
+        var info = await CheckAsync();
+        string running = CleanVersion(GetCurrentVersion());
+
+        if (!string.IsNullOrEmpty(info.Error))
+            return new InstallVerifyReport { RunningVersion = running, Error = info.Error };
+
+        var baseResult = new InstallVerifyReport
+        {
+            RunningVersion = running,
+            LatestTag = info.ParseFailed ? info.LatestTag : info.LatestVersion?.ToString(),
+            VersionMatchesLatest = !info.ParseFailed && !info.UpdateAvailable,
+            UpdateAvailable = info.UpdateAvailable
+        };
+
+        string? zip = zipOverride;
+        if (string.IsNullOrEmpty(zip) && !string.IsNullOrEmpty(info.ZipName))
+        {
+            string candidate = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Downloads", info.ZipName);
+            if (File.Exists(candidate)) zip = candidate;
+        }
+        if (string.IsNullOrEmpty(zip))
+            return baseResult; // ZipPath stays null — caller offers a file picker
+
+        if (!File.Exists(zip))
+            return new InstallVerifyReport { RunningVersion = running, Error = "Selected zip no longer exists." };
+
+        string actual = await ComputeSha256Async(zip, CancellationToken.None);
+        string? expected = await FetchExpectedChecksumAsync(info.ChecksumsUrl, info.ZipName, CancellationToken.None);
+
+        var problems = new List<string>();
+        int expected2 = 0, matching = 0;
+        try
+        {
+            string baseDir = AppContext.BaseDirectory;
+            using var archive = System.IO.Compression.ZipFile.OpenRead(zip);
+            foreach (var entry in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(entry.Name)) continue; // directory stub
+                expected2++;
+                string local = Path.Combine(baseDir, entry.FullName);
+                if (!File.Exists(local))
+                {
+                    problems.Add($"missing: {entry.FullName}");
+                }
+                else if (new FileInfo(local).Length != entry.Length)
+                {
+                    problems.Add($"altered size: {entry.FullName}");
+                }
+                else
+                {
+                    matching++;
+                }
+                if (problems.Count >= 10) { /* cap the list; keep counting */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            return new InstallVerifyReport
+            {
+                RunningVersion = running, LatestTag = baseResult.LatestTag,
+                VersionMatchesLatest = baseResult.VersionMatchesLatest,
+                ZipPath = zip, ZipSha256 = actual,
+                Error = $"Could not read the zip contents: {ex.Message}"
+            };
+        }
+
+        AppLogger.Log("verify", $"install check: version {running} vs {baseResult.LatestTag}, " +
+                                $"zip {(expected != null && string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase) ? "hash OK" : "hash unknown/mismatch")}, " +
+                                $"{matching}/{expected2} files match");
+
+        return new InstallVerifyReport
+        {
+            RunningVersion = running,
+            LatestTag = baseResult.LatestTag,
+            VersionMatchesLatest = baseResult.VersionMatchesLatest,
+            UpdateAvailable = baseResult.UpdateAvailable,
+            ZipPath = zip,
+            ZipSha256 = actual,
+            ZipHashMatches = expected == null ? null
+                : string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase),
+            FilesExpected = expected2,
+            FilesMatching = matching,
+            Problems = problems.Take(10).ToList()
+        };
+    }
+
     /// <summary>Version string for display, without any build metadata.</summary>
     public static string CleanVersion(Version? v) => v == null ? "unknown" : $"v{v.Major}.{v.Minor}.{v.Build}";
 

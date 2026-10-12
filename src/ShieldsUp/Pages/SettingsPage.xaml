@@ -61,6 +61,18 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Verify your copy -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Verify your copy" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="Checks the install you are running against the GitHub release: your version vs the latest, the downloaded zip's SHA256 vs the release checksum, and every release file present in this folder with the expected size."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                        <Button x:Name="VerifyInstallBtn" Content="Verify this install"
+                                Style="{StaticResource PrimaryButton}" Click="VerifyInstallBtn_Click" />
+                        <TextBlock x:Name="VerifyStatusText" Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Footnote -->
                 <Border Style="{StaticResource CardPanel}" BorderThickness="0" Background="Transparent">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">
