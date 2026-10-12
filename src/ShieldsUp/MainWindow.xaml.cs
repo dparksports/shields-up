@@ -112,11 +112,27 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            string ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ShieldsUp.ico");
-            if (!File.Exists(ico)) return;
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var wndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
-            Microsoft.UI.Windowing.AppWindow.GetFromWindowId(wndId).SetIcon(ico);
+            var appWnd = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(wndId);
+
+            // Open at the reference size and never shrink below usable
+            appWnd.Resize(new Windows.Graphics.SizeInt32 { Width = 1298, Height = 826 });
+            try
+            {
+                if (appWnd.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                {
+                    presenter.PreferredMinimumWidth = 980;
+                    presenter.PreferredMinimumHeight = 620;
+                }
+            }
+            catch
+            {
+                // Min-size clamps are a nicety, not a requirement.
+            }
+
+            string ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ShieldsUp.ico");
+            if (File.Exists(ico)) appWnd.SetIcon(ico);
         }
         catch
         {
