@@ -110,7 +110,7 @@ public sealed partial class MainWindow : Window
         typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
 
     private const string WindowRegKey = @"Software\ShieldsUp\Window";
-    private const int DefaultWidth = 1298, DefaultHeight = 826;
+    private const int DefaultWidth = 1284, DefaultHeight = 850;
     private const int MinWidth = 980, MinHeight = 620;
 
     private void ConfigureWindowChrome()
