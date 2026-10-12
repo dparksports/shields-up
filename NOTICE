@@ -2,7 +2,8 @@ Shields Up
 Copyright 2026 Shields Up contributors
 
 This product includes code derived from AutoCommand, a Windows security
-toolkit by Dan Park. Engine code in ShieldsUp.Core (helpers, services,
+toolkit by Dan Park (https://github.com/dparksports/autocommand-windows).
+Engine code in ShieldsUp.Core (helpers, services,
 models) was extracted from AutoCommand and adapted to a WinUI 3 front end.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
