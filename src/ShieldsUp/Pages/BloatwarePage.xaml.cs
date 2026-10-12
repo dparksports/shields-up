@@ -120,11 +120,8 @@ public sealed partial class BloatwarePage : Page
         {
             Title = "Manage Bloatware List",
             Content = editor,
-            CloseButtonText = "",
             XamlRoot = App.MainWnd?.Content?.XamlRoot
         };
-        // Hide the ContentDialog's own empty close button: the editor has its own Close
-        dialog.CloseButtonClick += (_, _) => { };
         editor.CloseRequested += (_, _) => dialog.Hide();
         await dialog.ShowAsync();
         await RefreshAppsList();

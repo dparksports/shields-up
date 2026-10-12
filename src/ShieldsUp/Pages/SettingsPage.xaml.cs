@@ -154,9 +154,10 @@ public sealed partial class SettingsPage : Page
     {
         VerifyInstallBtn.IsEnabled = false;
         VerifyStatusText.Text = "Checking against the GitHub release…";
+        var phase = new Progress<string>(msg => VerifyStatusText.Text = msg);
         try
         {
-            var report = await _updates.VerifyInstallAsync();
+            var report = await _updates.VerifyInstallAsync(null, phase);
 
             // Zip not found in Downloads — offer to point at it directly
             if (report.ZipPath == null && string.IsNullOrEmpty(report.Error))
@@ -167,7 +168,10 @@ public sealed partial class SettingsPage : Page
                     WinRT.Interop.WindowNative.GetWindowHandle(App.MainWnd));
                 var file = await picker.PickSingleFileAsync();
                 if (file != null)
+                {
+                    VerifyStatusText.Text = "Checking the selected zip…";
                     report = await _updates.VerifyInstallAsync(file.Path);
+                }
             }
 
             VerifyStatusText.Text = RenderVerifyReport(report);
@@ -190,8 +194,13 @@ public sealed partial class SettingsPage : Page
             return sb.ToString();
         }
 
-        sb.AppendLine($"{Mark(r.VersionMatchesLatest)} Version — running {r.RunningVersion}, latest release {r.LatestTag ?? "unknown"}"
-                      + (r.UpdateAvailable ? " (update available)" : ""));
+        if (!r.Online)
+            sb.AppendLine($"⚠ GitHub unreachable — ran local checks only. ({r.NetworkNote})");
+
+        sb.AppendLine(!r.Online
+            ? "– Version — couldn't reach GitHub to compare"
+            : $"{Mark(r.VersionMatchesLatest)} Version — running {r.RunningVersion}, latest release {r.LatestTag ?? "unknown"}"
+              + (r.UpdateAvailable ? " (update available)" : ""));
 
         if (r.ZipPath == null)
         {
@@ -200,9 +209,12 @@ public sealed partial class SettingsPage : Page
             return sb.ToString();
         }
 
-        sb.AppendLine($"{Mark(r.ZipHashMatches)} Zip SHA256 — {(r.ZipHashMatches == null
-            ? "no SHA256SUMS.txt on the release to compare against"
-            : $"{r.ZipSha256?.ToLowerInvariant()} {(r.ZipHashMatches == true ? "matches the release checksum" : "DOES NOT MATCH the release checksum")}")}");
+        if (!r.Online)
+            sb.AppendLine($"– Zip SHA256 — {r.ZipSha256?.ToLowerInvariant()} (compare against SHA256SUMS.txt on the release page)");
+        else
+            sb.AppendLine($"{Mark(r.ZipHashMatches)} Zip SHA256 — {(r.ZipHashMatches == null
+                ? "no SHA256SUMS.txt on the release to compare against"
+                : $"{r.ZipSha256?.ToLowerInvariant()} {(r.ZipHashMatches == true ? "matches the release checksum" : "DOES NOT MATCH the release checksum")}")}");
 
         if (r.FilesExpected > 0)
         {
@@ -213,7 +225,10 @@ public sealed partial class SettingsPage : Page
                 sb.AppendLine("    (list capped at 10)");
         }
 
-        sb.Append(r.OverallOk ? "✓ This install matches the release." : "⚠ This install differs from the release — see above.");
+        sb.Append(r.Online
+            ? (r.OverallOk ? "✓ This install matches the release." : "⚠ This install differs from the release — see above.")
+            : (r.FilesOk ? "✓ Local file checks passed. Re-run when online for the version and checksum comparison."
+                         : "⚠ Local file checks found problems — see above."));
         return sb.ToString();
     }
 }

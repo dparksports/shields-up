@@ -57,8 +57,10 @@ public partial class UpdateCheckService
         public string? LatestTag { get; init; }
         public bool VersionMatchesLatest { get; init; }
         public bool UpdateAvailable { get; init; }
-        public string? ZipPath { get; init; }          // null = zip not found (UI may offer a picker)
-        public bool? ZipHashMatches { get; init; }     // null = no checksum published to compare
+        public bool Online { get; init; } = true;        // false = GitHub unreachable, local checks only
+        public string NetworkNote { get; init; } = "";   // why we went local-only, if we did
+        public string? ZipPath { get; init; }            // null = zip not found (UI may offer a picker)
+        public bool? ZipHashMatches { get; init; }       // null = no checksum published to compare
         public string? ZipSha256 { get; init; }
         public int FilesExpected { get; init; }
         public int FilesMatching { get; init; }
@@ -67,6 +69,7 @@ public partial class UpdateCheckService
 
         public bool FilesOk => FilesExpected > 0 && FilesMatching == FilesExpected;
         public bool OverallOk => string.IsNullOrEmpty(Error)
+                                 && Online
                                  && VersionMatchesLatest
                                  && ZipHashMatches != false
                                  && FilesOk;
@@ -76,41 +79,71 @@ public partial class UpdateCheckService
     /// Verifies the running installation against the latest GitHub release.
     /// Finds the release zip in Downloads (or accepts an explicit path), hashes
     /// it against the release's SHA256SUMS.txt, and compares every entry in
-    /// the zip (name + size) against the installed folder.
+    /// the zip (name + size) against the installed folder. Network calls are
+    /// capped at 10s each and report progress through <paramref name="phase"/>;
+    /// if GitHub is unreachable, the local checks (zip hash + file comparison)
+    /// still run against whatever release zip is on disk.
     /// </summary>
-    public async Task<InstallVerifyReport> VerifyInstallAsync(string? zipOverride = null)
+    public async Task<InstallVerifyReport> VerifyInstallAsync(string? zipOverride = null, IProgress<string>? phase = null)
     {
+        phase?.Report("Contacting GitHub…");
         var info = await CheckAsync();
         string running = CleanVersion(GetCurrentVersion());
-
-        if (!string.IsNullOrEmpty(info.Error))
-            return new InstallVerifyReport { RunningVersion = running, Error = info.Error };
-
-        var baseResult = new InstallVerifyReport
-        {
-            RunningVersion = running,
-            LatestTag = info.ParseFailed ? info.LatestTag : info.LatestVersion?.ToString(),
-            VersionMatchesLatest = !info.ParseFailed && !info.UpdateAvailable,
-            UpdateAvailable = info.UpdateAvailable
-        };
+        bool online = string.IsNullOrEmpty(info.Error);
 
         string? zip = zipOverride;
-        if (string.IsNullOrEmpty(zip) && !string.IsNullOrEmpty(info.ZipName))
+        if (string.IsNullOrEmpty(zip) && online && !string.IsNullOrEmpty(info.ZipName))
         {
             string candidate = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "Downloads", info.ZipName);
             if (File.Exists(candidate)) zip = candidate;
         }
+        // Offline: fall back to the newest release zip on disk so local checks still run
+        if (string.IsNullOrEmpty(zip) && !online)
+        {
+            try
+            {
+                string downloads = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                if (Directory.Exists(downloads))
+                    zip = new DirectoryInfo(downloads)
+                        .EnumerateFiles("ShieldsUp*.zip")
+                        .OrderByDescending(f => f.LastWriteTimeUtc)
+                        .FirstOrDefault()?.FullName;
+            }
+            catch { }
+        }
+        if (string.IsNullOrEmpty(zip) && online)
+        {
+            // ZipPath stays null — caller offers a file picker
+            return new InstallVerifyReport { RunningVersion = running, Online = true };
+        }
         if (string.IsNullOrEmpty(zip))
-            return baseResult; // ZipPath stays null — caller offers a file picker
-
+        {
+            return new InstallVerifyReport
+            {
+                RunningVersion = running,
+                Online = false,
+                NetworkNote = info.Error,
+                Error = "GitHub is unreachable and no ShieldsUp release zip was found in Downloads. " +
+                        "Try again when online, or pick the zip manually."
+            };
+        }
         if (!File.Exists(zip))
             return new InstallVerifyReport { RunningVersion = running, Error = "Selected zip no longer exists." };
 
+        phase?.Report($"Hashing {Path.GetFileName(zip)}…");
         string actual = await ComputeSha256Async(zip, CancellationToken.None);
-        string? expected = await FetchExpectedChecksumAsync(info.ChecksumsUrl, info.ZipName, CancellationToken.None);
 
+        string? expected = null;
+        if (online && !string.IsNullOrEmpty(info.ChecksumsUrl))
+        {
+            phase?.Report("Fetching the release checksum…");
+            expected = await FetchExpectedChecksumAsync(info.ChecksumsUrl, info.ZipName);
+        }
+
+        phase?.Report("Comparing install files…");
         var problems = new List<string>();
         int expected2 = 0, matching = 0;
         try
@@ -141,23 +174,26 @@ public partial class UpdateCheckService
         {
             return new InstallVerifyReport
             {
-                RunningVersion = running, LatestTag = baseResult.LatestTag,
-                VersionMatchesLatest = baseResult.VersionMatchesLatest,
+                RunningVersion = running, LatestTag = online ? info.LatestTag : null,
+                Online = online, NetworkNote = online ? "" : info.Error,
                 ZipPath = zip, ZipSha256 = actual,
                 Error = $"Could not read the zip contents: {ex.Message}"
             };
         }
 
-        AppLogger.Log("verify", $"install check: version {running} vs {baseResult.LatestTag}, " +
+        AppLogger.Log("verify", $"install check ({(online ? "online" : "OFFLINE, local-only")}): " +
+                                $"version {running} vs {info.LatestTag ?? "?"}, " +
                                 $"zip {(expected != null && string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase) ? "hash OK" : "hash unknown/mismatch")}, " +
                                 $"{matching}/{expected2} files match");
 
         return new InstallVerifyReport
         {
             RunningVersion = running,
-            LatestTag = baseResult.LatestTag,
-            VersionMatchesLatest = baseResult.VersionMatchesLatest,
-            UpdateAvailable = baseResult.UpdateAvailable,
+            LatestTag = online ? (info.ParseFailed ? info.LatestTag : info.LatestVersion?.ToString()) : null,
+            VersionMatchesLatest = online && !info.ParseFailed && !info.UpdateAvailable,
+            UpdateAvailable = info.UpdateAvailable,
+            Online = online,
+            NetworkNote = online ? "" : info.Error,
             ZipPath = zip,
             ZipSha256 = actual,
             ZipHashMatches = expected == null ? null
@@ -173,19 +209,24 @@ public partial class UpdateCheckService
 
     public static Version? GetCurrentVersion() => typeof(UpdateCheckService).Assembly.GetName().Version;
 
-    public async Task<UpdateInfo> CheckAsync()
+    public async Task<UpdateInfo> CheckAsync(CancellationToken ct = default)
     {
         try
         {
+            // Metadata calls fail fast: a stalled route to GitHub must not hang
+            // the caller for the full 30s HttpClient timeout.
+            using var capped = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            capped.CancelAfter(TimeSpan.FromSeconds(10));
+
             using var request = new HttpRequestMessage(HttpMethod.Get,
                 $"https://api.github.com/repos/{Repo}/releases/latest");
             request.Headers.UserAgent.ParseAdd($"ShieldsUp/{CleanVersion(GetCurrentVersion())} (update-check)");
 
-            using var response = await Http.SendAsync(request);
+            using var response = await Http.SendAsync(request, capped.Token);
             if (!response.IsSuccessStatusCode)
                 return new UpdateInfo { Error = $"GitHub returned {(int)response.StatusCode} {response.ReasonPhrase}." };
 
-            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(capped.Token));
             var root = doc.RootElement;
 
             string tag = root.TryGetProperty("tag_name", out var tagEl) ? tagEl.GetString() ?? "" : "";
@@ -230,6 +271,11 @@ public partial class UpdateCheckService
                 ZipName = zipName,
                 ChecksumsUrl = sumsUrl
             };
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            AppLogger.Log("update check", "GitHub metadata call timed out after 10s (stalled route?)");
+            return new UpdateInfo { Error = "GitHub did not respond within 10 seconds — the network route may be stalled. Try again in a moment." };
         }
         catch (Exception ex)
         {
@@ -316,16 +362,19 @@ public partial class UpdateCheckService
         }
     }
 
-    private static async Task<string?> FetchExpectedChecksumAsync(string? sumsUrl, string zipName, CancellationToken ct)
+    private static async Task<string?> FetchExpectedChecksumAsync(string? sumsUrl, string? zipName, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(sumsUrl)) return null;
+        if (string.IsNullOrEmpty(sumsUrl) || string.IsNullOrEmpty(zipName)) return null;
         try
         {
+            using var capped = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            capped.CancelAfter(TimeSpan.FromSeconds(10));
+
             using var request = new HttpRequestMessage(HttpMethod.Get, sumsUrl);
             request.Headers.UserAgent.ParseAdd("ShieldsUp updater");
-            using var response = await Http.SendAsync(request, ct);
+            using var response = await Http.SendAsync(request, capped.Token);
             if (!response.IsSuccessStatusCode) return null;
-            var text = await response.Content.ReadAsStringAsync(ct);
+            var text = await response.Content.ReadAsStringAsync(capped.Token);
             foreach (var line in text.Split('\n'))
             {
                 // "<hash>  <name>" or "<hash> <name>"

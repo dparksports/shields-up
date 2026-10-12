@@ -6,7 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid RowSpacing="10" MinWidth="680" MaxWidth="760" MinHeight="560">
+    <Grid RowSpacing="10" MinWidth="460" MaxWidth="760">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
