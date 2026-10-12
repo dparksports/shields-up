@@ -1,17 +1,19 @@
 # ShieldsUp release build: self-contained win-x64 folder + zip + SHA256SUMS.
 # Mirrors AutoCommand's distribution model (loose files, no installer).
 #
-# Usage:  .\publish.ps1 [-OutDir .\publish]
+# Usage:  .\publish.ps1 [-OutDir .\publish] [-Version 2026.10.12]
 param(
-    [string]$OutDir = ".\publish"
+    [string]$OutDir = ".\publish",
+    [string]$Version
 )
 
 $ErrorActionPreference = "Stop"
 Push-Location (Split-Path -Parent $PSCommandPath)
 
 # Version = build date (yyyy.M.d), stamped into both csproj files so every
-# release carries the day it was built, AutoCommand-style
-$version = Get-Date -Format "yyyy.M.d"
+# release carries the day it was built, AutoCommand-style. -Version overrides
+# for same-day re-releases (the date would collide with the earlier build).
+$version = if ($Version) { $Version } else { Get-Date -Format "yyyy.M.d" }
 foreach ($proj in @(".\src\ShieldsUp\ShieldsUp.csproj", ".\src\ShieldsUp.Core\ShieldsUp.Core.csproj")) {
     (Get-Content $proj -Raw) -replace "<Version>[^<]+</Version>", "<Version>$version</Version>" |
         Set-Content $proj -NoNewline
