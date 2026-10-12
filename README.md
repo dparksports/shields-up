@@ -47,8 +47,8 @@ you ask for it. And uninstalling is deleting the folder.
 
 ## Who makes this
 
-**Dan Park — MagicPoint.ai, California.** Shields Up grew out of
-[AutoCommand](https://github.com/), a Windows security toolkit, by keeping the parts
+**Dan Park — MagicPoint.ai, California.** Shields Up grew out of AutoCommand, an
+earlier Windows security toolkit of mine, by keeping the parts
 a normal PC owner actually wants and leaving the analyst tooling behind. The same
 credit sits in the app, at the bottom of the Settings page.
 
