@@ -16,8 +16,7 @@
 
         <!-- White top bar (reference style): carries the app title, acts as the
              drag region; the system caption buttons overlay its right edge -->
-        <Border x:Name="AppTitleBar" Grid.Row="0" Background="#FFFFFF"
-                BorderBrush="#ECECEC" BorderThickness="0,0,0,1">
+        <Border x:Name="AppTitleBar" Grid.Row="0" Background="#FFFFFF">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
                 <TextBlock Text="🛡" FontFamily="Segoe UI Emoji" FontSize="14" VerticalAlignment="Center" />
                 <TextBlock Text="Shields Up" FontFamily="Segoe UI Variable Display, Segoe UI"
