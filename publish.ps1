@@ -9,7 +9,13 @@ param(
 $ErrorActionPreference = "Stop"
 Push-Location (Split-Path -Parent $PSCommandPath)
 
-$version = (Select-Xml -Path ".\src\ShieldsUp\ShieldsUp.csproj" -XPath "//Version").Node.InnerText
+# Version = build date (yyyy.M.d), stamped into both csproj files so every
+# release carries the day it was built, AutoCommand-style
+$version = Get-Date -Format "yyyy.M.d"
+foreach ($proj in @(".\src\ShieldsUp\ShieldsUp.csproj", ".\src\ShieldsUp.Core\ShieldsUp.Core.csproj")) {
+    (Get-Content $proj -Raw) -replace "<Version>[^<]+</Version>", "<Version>$version</Version>" |
+        Set-Content $proj -NoNewline
+}
 $publishDir = Join-Path $OutDir "v$version"
 
 Write-Host "== ShieldsUp v$version - publishing self-contained win-x64 ==" -ForegroundColor Cyan
