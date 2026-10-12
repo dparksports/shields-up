@@ -8,10 +8,78 @@ namespace ShieldsUp.Pages;
 public sealed partial class FirewallPage : Page
 {
     private List<FirewallRuleItem> _currentRules = new();
+    private CommunityToolkit.WinUI.UI.Controls.DataGridColumn _sortedColumn;
 
     public FirewallPage()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Click-to-sort on any column. The toolkit DataGrid can't sort a plain
+    /// List by itself, so the header click maps to a property, the rules are
+    /// sorted here (group/name tiebreakers keep rows readable) and rebound,
+    /// with the column arrow indicator kept in sync.
+    /// </summary>
+    private void RulesGrid_Sorting(object sender, CommunityToolkit.WinUI.UI.Controls.DataGridColumnEventArgs e)
+    {
+        string? prop = e.Column.Header switch
+        {
+            "Enabled" => nameof(FirewallRuleItem.Enabled),
+            "Action" => nameof(FirewallRuleItem.Action),
+            "Name" => nameof(FirewallRuleItem.DisplayName),
+            "Group" => nameof(FirewallRuleItem.DisplayGroup),
+            "Protocol" => nameof(FirewallRuleItem.Protocol),
+            "Local Port" => nameof(FirewallRuleItem.LocalPort),
+            "Remote Address" => nameof(FirewallRuleItem.RemoteAddress),
+            "Profile" => nameof(FirewallRuleItem.Profile),
+            _ => null
+        };
+        if (prop == null) return;
+
+        bool ascending = e.Column.SortDirection
+            is null or not CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Ascending;
+
+        if (!ReferenceEquals(_sortedColumn, e.Column) && _sortedColumn != null)
+            _sortedColumn.SortDirection = null; // clear the previous column's arrow
+        _sortedColumn = e.Column;
+        e.Column.SortDirection = ascending
+            ? CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Ascending
+            : CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Descending;
+
+        SortRules(prop, ascending);
+    }
+
+    private void SortRules(string property, bool ascending)
+    {
+        Func<FirewallRuleItem, object> key = property switch
+        {
+            nameof(FirewallRuleItem.Enabled) => r => r.Enabled,
+            nameof(FirewallRuleItem.Action) => r => r.Action,
+            nameof(FirewallRuleItem.DisplayName) => r => r.DisplayName,
+            nameof(FirewallRuleItem.DisplayGroup) => r => r.DisplayGroup,
+            nameof(FirewallRuleItem.Protocol) => r => r.Protocol,
+            nameof(FirewallRuleItem.LocalPort) => r => r.LocalPort,
+            nameof(FirewallRuleItem.RemoteAddress) => r => r.RemoteAddress,
+            nameof(FirewallRuleItem.Profile) => r => r.Profile,
+            _ => r => r.DisplayName
+        };
+
+        // Enabled is a bool: order False first on ascending feels wrong for a
+        // rules list — enabled rules on top reads better, so invert that one
+        if (property == nameof(FirewallRuleItem.Enabled))
+            ascending = !ascending;
+
+        var ordered = ascending
+            ? _currentRules.OrderBy(key, Comparer<object>.Create((a, b) => string.Compare(a?.ToString(), b?.ToString(), StringComparison.OrdinalIgnoreCase)))
+            : _currentRules.OrderByDescending(key, Comparer<object>.Create((a, b) => string.Compare(a?.ToString(), b?.ToString(), StringComparison.OrdinalIgnoreCase)));
+
+        _currentRules = ordered
+            .ThenBy(r => r.DisplayGroup, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        RulesGrid.ItemsSource = _currentRules;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)

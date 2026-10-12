@@ -65,14 +65,31 @@ public sealed partial class AttackSurfacePage : Page
                 {
                     string status = sc.Status.ToString();
                     string startMode = ServiceHelper.GetStartMode("SstpSvc");
-                    DispatcherQueue.TryEnqueue(() => SstpStatusText.Text = $"{status} | Startup: {startMode}");
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        SstpStatusText.Text = $"{status} | Startup: {startMode}";
+                        SetSstpSummary(status);
+                    });
                 }
             }
             catch
             {
-                DispatcherQueue.TryEnqueue(() => SstpStatusText.Text = "Service not found");
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    SstpStatusText.Text = "Service not found";
+                    SetSstpSummary("NotFound");
+                });
             }
         });
+    }
+
+    private void SetSstpSummary(string status)
+    {
+        bool active = status is "Running" or "StartPending";
+        SstpCountText.Text = active ? "Active ⚠" : "Off ✓";
+        SstpCountText.Foreground = active
+            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00))
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x1E, 0x8E, 0x3E));
     }
 
     private async void SstpToggleBtn_Click(object sender, RoutedEventArgs e)
@@ -183,7 +200,11 @@ public sealed partial class AttackSurfacePage : Page
                 }
             }
             catch { }
-            DispatcherQueue.TryEnqueue(() => WifiDirectGrid.ItemsSource = adapters);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                WifiDirectGrid.ItemsSource = adapters;
+                SetCount(WifiDirectCountText, WifiDirectSectionCount, adapters.Count, "found");
+            });
         });
     }
 
@@ -194,7 +215,14 @@ public sealed partial class AttackSurfacePage : Page
         {
             string output = ProcessRunner.Run("bcdedit", "/enum {current}");
             bool debugOn = output.Contains("debug") && output.Contains("Yes");
-            DispatcherQueue.TryEnqueue(() => KdnetStatusText.Text = debugOn ? "Kernel Debug ENABLED" : "Kernel Debug Disabled");
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                KdnetStatusText.Text = debugOn ? "Kernel Debug ENABLED" : "Kernel Debug Disabled";
+                KdnetCountText.Text = debugOn ? "On ⚠" : "Off ✓";
+                KdnetCountText.Foreground = new SolidColorBrush(debugOn
+                    ? Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00)
+                    : Windows.UI.Color.FromArgb(255, 0x1E, 0x8E, 0x3E));
+            });
         });
     }
 
@@ -235,7 +263,11 @@ public sealed partial class AttackSurfacePage : Page
                 }
             }
             catch { }
-            DispatcherQueue.TryEnqueue(() => KdnetGrid.ItemsSource = adapters);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                KdnetGrid.ItemsSource = adapters;
+                SetCount(KdnetCountText, KdnetSectionCount, adapters.Count, "found");
+            });
         });
     }
 
@@ -259,8 +291,28 @@ public sealed partial class AttackSurfacePage : Page
                 }
             }
             catch { }
-            DispatcherQueue.TryEnqueue(() => WanMiniportGrid.ItemsSource = adapters);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                WanMiniportGrid.ItemsSource = adapters;
+                SetCount(MiniportCountText, MiniportSectionCount, adapters.Count, "present");
+            });
         });
+    }
+
+    /// <summary>
+    /// At-a-glance count rundown: the top strip chip and the owning section's
+    /// badge both show the adapter count — green at zero (nothing exposed),
+    /// amber otherwise.
+    /// </summary>
+    private static void SetCount(TextBlock chip, TextBlock badge, int count, string verb)
+    {
+        string text = $"{count} {verb}" + (count == 0 ? " ✓" : "");
+        chip.Text = text;
+        chip.Foreground = new SolidColorBrush(count == 0
+            ? Windows.UI.Color.FromArgb(255, 0x1E, 0x8E, 0x3E)
+            : Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
+        badge.Text = text;
+        badge.Foreground = chip.Foreground;
     }
 
     private async void RemoveAllMiniportsBtn_Click(object sender, RoutedEventArgs e)

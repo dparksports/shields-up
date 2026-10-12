@@ -64,7 +64,7 @@
         <!-- Rules Grid -->
 <Border Style="{StaticResource ContentPanel}" Grid.Row="2">
         <controls:DataGrid Grid.Row="2" x:Name="RulesGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                           SelectionMode="Single" Foreground="#1D1D1F">
+                           SelectionMode="Single" Foreground="#1D1D1F" Sorting="RulesGrid_Sorting">
             <controls:DataGrid.Columns>
                 <controls:DataGridTemplateColumn Header="Enabled" Width="80">
                     <controls:DataGridTemplateColumn.CellTemplate>
