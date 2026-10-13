@@ -7,7 +7,7 @@
     <AssemblyName>ShieldsUp.Core</AssemblyName>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2026.10.13</Version>
+    <Version>2026.10.14</Version>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
