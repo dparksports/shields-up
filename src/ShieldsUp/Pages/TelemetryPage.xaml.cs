@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using Microsoft.UI;
+using Microsoft.UI.Xaml.Media;
 using ShieldsUp.Core.Services;
 
 namespace ShieldsUp.Pages;
@@ -17,6 +19,7 @@ public sealed partial class TelemetryPage : Page
         public string Category { get; set; }
         public string StateText { get; set; }
         public string Evidence { get; set; }
+        public Brush StateBrush { get; set; }
         public TelemetryRuleStatus Status { get; set; }
     }
 
@@ -54,14 +57,20 @@ public sealed partial class TelemetryPage : Page
                     Category = status.Rule.Category,
                     StateText = status.Detected ? status.StateText : "Not installed",
                     Evidence = status.Evidence,
+                    StateBrush = BrushFor(status),
                     Status = status
                 });
             }
             var detected = statuses.Where(s => s.Detected).ToList();
             var on = detected.Where(s => s.State == TelemetryState.On).ToList();
+            var ineffective = detected.Where(s => s.State == TelemetryState.Ineffective).ToList();
+            var blocked = detected.Where(s => s.Enforced).ToList();
             StatusText.Text = detected.Count == 0
                 ? "None of the known-telemetry apps are installed on this machine."
-                : $"{detected.Count} detected — {on.Count} still sending usage data.";
+                : $"{detected.Count} detected — {on.Count} still sending usage data"
+                  + (ineffective.Count > 0 ? $", {ineffective.Count} opt-out(s) present but not honored — re-apply to fix" : "")
+                  + (blocked.Count > 0 ? $", {blocked.Count} network-blocked" : "")
+                  + ".";
         }
         finally
         {
@@ -69,16 +78,43 @@ public sealed partial class TelemetryPage : Page
         }
     }
 
+    private static Brush BrushFor(TelemetryRuleStatus status)
+    {
+        if (!status.Detected) return Solid(0xFF, 0x6B, 0x6B, 0x6B);       // gray — not installed
+        return status.State switch
+        {
+            TelemetryState.On => Solid(0xFF, 0xB1, 0x1A, 0x1A),           // red — still sending
+            TelemetryState.Off => Solid(0xFF, 0x1B, 0x7F, 0x32),          // green — opted out
+            TelemetryState.Ineffective => Solid(0xFF, 0xB0, 0x5A, 0x00),  // amber — present, wrong type
+            _ => Solid(0xFF, 0x6B, 0x6B, 0x6B),                           // gray — unknown
+        };
+    }
+
+    private static Brush Solid(byte a, byte r, byte g, byte b) =>
+        new SolidColorBrush(ColorHelper.FromArgb(a, r, g, b));
+
     private void RulesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (RulesGrid.SelectedItem is not TelemetryRow row || row.Status?.Rule == null) return;
+        if (RulesGrid.SelectedItem is not TelemetryRow row || row.Status?.Rule == null)
+        {
+            BlockBtn.Visibility = Visibility.Collapsed;
+            UnblockBtn.Visibility = Visibility.Collapsed;
+            return;
+        }
         var rule = row.Status.Rule;
         DetailText.Text =
             $"{rule.AppName} — {rule.Mechanism}\n" +
             $"Scope: {rule.Scope}. Risk of opting out: {rule.RiskNote}" +
             (rule.WatchDomains.Count > 0
                 ? $"\nKnown telemetry domains: {string.Join(", ", rule.WatchDomains)}"
+                : "") +
+            (rule.Enforce != null
+                ? $"\nNetwork block: {(row.Status.Enforced ? "active" : "available")} — pins {string.Join(", ", rule.Enforce.Domains)} to 0.0.0.0 (system-wide, reversible)."
                 : "");
+
+        bool canBlock = rule.Enforce != null && row.Status.Detected;
+        BlockBtn.Visibility = canBlock && !row.Status.Enforced ? Visibility.Visible : Visibility.Collapsed;
+        UnblockBtn.Visibility = canBlock && row.Status.Enforced ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private async void OptOutBtn_Click(object sender, RoutedEventArgs e)
@@ -121,6 +157,56 @@ public sealed partial class TelemetryPage : Page
         finally
         {
             RevertBtn.IsEnabled = true;
+        }
+    }
+
+    private async void BlockBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (RulesGrid.SelectedItem is not TelemetryRow row || row.Status?.Rule?.Enforce == null) return;
+        var rule = row.Status.Rule;
+
+        if (!await Helpers.Dialogs.Confirm(
+                $"Block {rule.AppName} telemetry at the network level instead?\n\n" +
+                $"This pins {string.Join(", ", rule.Enforce.Domains)} to 0.0.0.0 in the hosts file. " +
+                "Use it when the app ignores its own opt-out switch, or when you want the guarantee " +
+                "regardless of what the app does.\n\n" +
+                "Know what this touches:\n" +
+                "• System-wide — every program on this PC, including browsers, fails to reach the domain\n" +
+                "• No functional impact on this app — its telemetry sender already treats network failure as harmless\n" +
+                "• Reversible here; the DNS cache is flushed so it takes effect immediately\n" +
+                "• Requires the app to run elevated",
+                "Block network"))
+            return;
+
+        BlockBtn.IsEnabled = false;
+        try
+        {
+            var (success, message) = await _service.ApplyEnforceAsync(rule);
+            if (success) await Helpers.Dialogs.Inform(message, "Network block");
+            else await Helpers.Dialogs.Error(message, "Failed");
+            await ScanAsync();
+        }
+        finally
+        {
+            BlockBtn.IsEnabled = true;
+        }
+    }
+
+    private async void UnblockBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (RulesGrid.SelectedItem is not TelemetryRow row || row.Status?.Rule?.Enforce == null) return;
+
+        UnblockBtn.IsEnabled = false;
+        try
+        {
+            var (success, message) = await _service.RevertEnforceAsync(row.Status.Rule);
+            if (success) await Helpers.Dialogs.Inform(message, "Network block removed");
+            else await Helpers.Dialogs.Error(message, "Failed");
+            await ScanAsync();
+        }
+        finally
+        {
+            UnblockBtn.IsEnabled = true;
         }
     }
 

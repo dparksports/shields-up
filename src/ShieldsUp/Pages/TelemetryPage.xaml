@@ -11,7 +11,7 @@
 
             <StackPanel>
                 <TextBlock Text="Telemetry Opt-Out" Style="{StaticResource PageHeaderText}" />
-                <TextBlock Text="Many installed apps and libraries phone home usage statistics by default. This tab knows the official opt-out switch for each one, shows whether it is currently on, and applies or reverts the setting with the previous value snapshotted — nothing here is a one-way door."
+                <TextBlock Text="Many installed apps and libraries phone home usage statistics by default. This tab knows the official opt-out switch for each one, shows whether it is currently on, and applies or reverts the setting with the previous value snapshotted — nothing here is a one-way door. For software that ignores its own switch, rules can also block the telemetry domain at the network level."
                            Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
             </StackPanel>
 
@@ -35,7 +35,15 @@
                                 <controls:DataGrid.Columns>
                                     <controls:DataGridTextColumn Header="App" Binding="{Binding AppName}" Width="170" />
                                     <controls:DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="110" />
-                                    <controls:DataGridTextColumn Header="Status" Binding="{Binding StateText}" Width="110" />
+                                    <controls:DataGridTemplateColumn Header="Status" Width="140">
+                                        <controls:DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StateText}" Foreground="{Binding StateBrush}"
+                                                           VerticalAlignment="Center" Margin="8,0"
+                                                           ToolTipService.ToolTip="{Binding Evidence}" />
+                                            </DataTemplate>
+                                        </controls:DataGridTemplateColumn.CellTemplate>
+                                    </controls:DataGridTemplateColumn>
                                     <controls:DataGridTemplateColumn Header="Evidence" Width="*">
                                         <controls:DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -52,6 +60,9 @@
                                         Click="OptOutBtn_Click" />
                                 <Button x:Name="RevertBtn" Content="Revert selected" Click="RevertBtn_Click"
                                         ToolTipService.ToolTip="Restores the setting that was in place before the opt-out." />
+                                <Button x:Name="BlockBtn" Content="Block network instead" Click="BlockBtn_Click" Visibility="Collapsed"
+                                        ToolTipService.ToolTip="Pins the telemetry domain to 0.0.0.0 in the hosts file — enforcement that works even when the app ignores its own switch." />
+                                <Button x:Name="UnblockBtn" Content="Remove network block" Click="UnblockBtn_Click" Visibility="Collapsed" />
                                 <Button x:Name="VerifyBtn" Content="Verify: still beaconing?" Click="VerifyBtn_Click"
                                         ToolTipService.ToolTip="Checks the DNS resolver cache for the telemetry domains this app is known to contact." />
                             </StackPanel>
@@ -62,7 +73,7 @@
                         <StackPanel>
                             <TextBlock Text="How this works" Style="{StaticResource SectionHeaderText}" />
                             <TextBlock TextWrapping="Wrap" Style="{StaticResource SubtleText}"
-                                       Text="Each entry applies the vendor's own documented opt-out (a settings key, environment variable or policy), not a firewall block. Changes are snapshotted to telemetry_state.json before they are made, so Revert puts back exactly what was there." />
+                                       Text="Each entry applies the vendor's own documented opt-out (a settings key, environment variable or policy), written in exactly the token type the target reads, verified by re-reading the file, and snapshotted to telemetry_state.json so Revert puts back exactly what was there. Opt-outs only affect processes started after the change. When a rule offers 'Block network instead', it pins the telemetry domain to 0.0.0.0 in the hosts file — system-wide for that domain (browsers' requests to it fail too), reversible here, and it never depends on the target honoring anything." />
                             <TextBlock x:Name="DetailText" TextWrapping="Wrap" Margin="0,10,0,0" Style="{StaticResource SubtleText}" />
                         </StackPanel>
                     </Border>
