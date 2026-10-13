@@ -167,21 +167,39 @@ public sealed partial class TelemetryPage : Page
 
         if (!await Helpers.Dialogs.Confirm(
                 $"Block {rule.AppName} telemetry at the network level instead?\n\n" +
-                $"This pins {string.Join(", ", rule.Enforce.Domains)} to 0.0.0.0 in the hosts file. " +
+                $"This pins {string.Join(", ", rule.Enforce.Domains)} in the hosts file. " +
                 "Use it when the app ignores its own opt-out switch, or when you want the guarantee " +
                 "regardless of what the app does.\n\n" +
                 "Know what this touches:\n" +
                 "• System-wide — every program on this PC, including browsers, fails to reach the domain\n" +
                 "• No functional impact on this app — its telemetry sender already treats network failure as harmless\n" +
-                "• Reversible here; the DNS cache is flushed so it takes effect immediately\n" +
+                "• Reversible here (or in AutoCommand); the DNS cache is flushed so it takes effect immediately\n" +
                 "• Requires the app to run elevated",
                 "Block network"))
             return;
 
+        // AutoCommand is running: offer the sinkhole address so its Black Hole
+        // tab catches and logs every denied attempt. AutoCommand engages its
+        // listener on its next 5-second state refresh — no restart needed.
+        string address = null;
+        bool autoCommandRunning = false;
+        try { autoCommandRunning = System.Diagnostics.Process.GetProcessesByName("AutoCommand").Length > 0; }
+        catch { /* detection is best-effort; silent pin remains the default */ }
+        if (autoCommandRunning &&
+            await Helpers.Dialogs.Confirm(
+                "AutoCommand is running — log the blocked attempts?\n\n" +
+                "Yes pins the domain at 127.0.0.1 (sinkhole): AutoCommand's Black Hole tab catches every knock with " +
+                "process, PID and command line, and counts them for you.\n" +
+                "No pins at 0.0.0.0 (silent): attempts are denied instantly but nothing is logged.",
+                "Sinkhole?"))
+        {
+            address = "127.0.0.1";
+        }
+
         BlockBtn.IsEnabled = false;
         try
         {
-            var (success, message) = await _service.ApplyEnforceAsync(rule);
+            var (success, message) = await _service.ApplyEnforceAsync(rule, address);
             if (success) await Helpers.Dialogs.Inform(message, "Network block");
             else await Helpers.Dialogs.Error(message, "Failed");
             await ScanAsync();
