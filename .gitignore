@@ -7,3 +7,5 @@ crash.log
 *.pdb
 # telemetry deploy secret (never commit; see telemetry/server/DEPLOY.md)
 admin-token.txt
+# wrangler local state (never commit)
+.wrangler/
