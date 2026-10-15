@@ -73,6 +73,22 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Community: the live anonymous count + share -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Community" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="How many people run Shields Up — an anonymous, opt-in daily count (off by default, no identifier of any kind), charted live. Every install counts; pass the link on."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="CommunityGraphBtn" Content="📈 Community graph"
+                                    Style="{StaticResource PrimaryButton}" Click="CommunityGraphBtn_Click" />
+                            <Button x:Name="ShareBtn" Content="🔗 Share Shields Up"
+                                    Style="{StaticResource PrimaryButton}" Click="ShareBtn_Click" />
+                        </StackPanel>
+                        <TextBlock x:Name="ShareStatusText" Style="{StaticResource SubtleText}" Text="" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Footnote -->
                 <Border Style="{StaticResource CardPanel}" BorderThickness="0" Background="Transparent">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">

@@ -146,6 +146,38 @@ public sealed partial class SettingsPage : Page
             new Uri(Core.Services.UpdateCheckService.ReleasePage));
     }
 
+    // ── Community: the live anonymous count + share ─────────────────────
+
+    private async void CommunityGraphBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(
+                new Uri(Core.Services.UsagePingService.GraphPageUrl
+                        ?? Core.Services.UsagePingService.ReleasesUrl));
+        }
+        catch { /* browser launch refused — nothing to do */ }
+    }
+
+    private void ShareBtn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var url = Core.Services.UsagePingService.GraphPageUrl
+                      ?? Core.Services.UsagePingService.ReleasesUrl;
+            var pkg = new Windows.ApplicationModel.DataTransfer.DataPackage { RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy };
+            pkg.SetText(url);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pkg);
+            ShareStatusText.Text = "Link copied — every install counts. Thank you!";
+            var clear = DispatcherQueue.CreateTimer();
+            clear.Interval = TimeSpan.FromSeconds(3);
+            clear.IsRepeating = false;
+            clear.Tick += (s, _) => ShareStatusText.Text = "";
+            clear.Start();
+        }
+        catch { /* clipboard unavailable — nothing to do */ }
+    }
+
     // -----------------------------------------------------------------------
     // Verify this install — version vs release, zip hash vs SHA256SUMS,
     // every release file present with the expected size

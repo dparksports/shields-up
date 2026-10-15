@@ -5,3 +5,5 @@ publish/
 .vs/
 crash.log
 *.pdb
+# telemetry deploy secret (never commit; see telemetry/server/DEPLOY.md)
+admin-token.txt

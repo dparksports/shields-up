@@ -40,6 +40,13 @@ public sealed partial class MainWindow : Window
         // Land on the first page instead of an empty frame
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
         Core.Services.AppLogger.Log("shell", "MainWindow created");
+
+        // Anonymous usage count (opt-in, off by default): the consent dialog
+        // is offered here (max 3 times, ever), and consenting installs ping
+        // once a day. Inert while UsagePingService.Endpoint is unconfigured.
+        // Spec + server code: telemetry/ in the repository.
+        ContentFrame.Loaded += async (_, _) =>
+            await UsagePingPrompt.RunStartupFlowAsync(ContentFrame.XamlRoot);
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)

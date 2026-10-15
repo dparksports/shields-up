@@ -64,7 +64,13 @@ instead of trusted:
   task, nothing in your tray. Close it, and it isn't running.
 - **Watch the network.** Exactly two kinds of connection, both only when *you* click:
   the update check talks to GitHub; the DBX Safety page downloads a Microsoft update
-  when asked. No telemetry, no analytics, no accounts.
+  when asked. No telemetry, no analytics, no accounts. The sole optional exception,
+  off unless you say yes: an **opt-in, anonymous usage count** — app build date and
+  Windows build, at most once a day, **no identifier of any kind (not even a random
+  one)**, IP never stored — offered at most three times, revocable anytime by
+  deleting `HKCU\Software\ShieldsUp\UsagePing` ([privacy policy](PRIVACY.md);
+  spec + server code are public in the repo's `telemetry/` folder — verify,
+  don't trust).
 - **Verify the download.** Every release ships `SHA256SUMS.txt`
   (`certutil -hashfile <zip> SHA256` before you run anything). Settings →
   **Verify this install** does the whole check in-app: your version against the
