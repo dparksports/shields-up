@@ -41,4 +41,13 @@
     <ProjectReference Include="..\ShieldsUp.Core\ShieldsUp.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- AutoCommand III engine types under the names this app's pages
+         already use (same pattern as the AutoCommand app itself) -->
+    <Using Include="FirewallService = AutoCommand.Contain.Core.FirewallService" />
+    <Using Include="FirewallRuleItem = AutoCommand.Engines.Firewall.RuleInfo" />
+    <Using Include="GroupToggleResult = AutoCommand.Engines.Firewall.GroupToggleResult" />
+    <Using Include="FleetToggleResult = AutoCommand.Engines.Firewall.FleetToggleResult" />
+  </ItemGroup>
+
 </Project>

@@ -10,7 +10,7 @@ namespace ShieldsUp.Core.Services
     public class ProfileApplyResult
     {
         public string ProfileName { get; set; }
-        public List<FirewallService.GroupToggleResult> Groups { get; } = new List<FirewallService.GroupToggleResult>();
+        public List<GroupToggleResult> Groups { get; } = new List<GroupToggleResult>();
         public int TotalMatched { get; set; }
         public int TotalChanged { get; set; }
         public int TotalFailed { get; set; }
@@ -19,8 +19,12 @@ namespace ShieldsUp.Core.Services
     }
 
     /// <summary>
-    /// Firewall profile presets using COM API.
-    /// Ported from DeviceMonitorCS — now uses FirewallService instead of PowerShell.
+    /// Shields Up's named presets over the shared AutoCommand III firewall
+    /// engine (Engines.Firewall through Contain.Core). The user-facing names
+    /// (Strict Public / Home / Gaming / Office / Shield Up) are this app's
+    /// language; every rule touch underneath goes through the same engine
+    /// AutoCommand uses, so the two apps can never disagree about a group
+    /// toggle or the AC-BLOCK rule family.
     /// </summary>
     public class FirewallProfileService
     {
@@ -81,7 +85,7 @@ namespace ShieldsUp.Core.Services
         private async Task Toggle(ProfileApplyResult acc, IProgress<string> progress, string group, bool enable)
         {
             progress?.Report($"{(enable ? "Enabling" : "Disabling")} group '{group}'…");
-            FirewallService.GroupToggleResult r = enable ? await EnableGroup(group) : await DisableGroup(group);
+            GroupToggleResult r = await FirewallService.Instance.ToggleGroupAsync(group, enable);
             acc.Groups.Add(r);
             acc.TotalMatched += r.Matched;
             acc.TotalChanged += r.Changed;
@@ -89,18 +93,61 @@ namespace ShieldsUp.Core.Services
             if (r.FirstError != null && acc.FirstError == null) acc.FirstError = r.FirstError;
         }
 
-        private Task<FirewallService.GroupToggleResult> ApplyShieldUp()
+        // ── Shield Up (block all) ─────────────────────────────────────────
+        // Implemented locally rather than calling the engine's ShieldsUpMdns
+        // preset for one deliberate reason: the whitelist here is WIDER. The
+        // 2026-10-30 field report caught a Shields-Up-era mass-disable with
+        // only mDNS + Core Networking surviving — which silently takes
+        // WSL2/Hyper-V VM egress down with it (forwarded VM traffic dies
+        // below the per-app rule model, with no attribution anywhere in the
+        // UI). VM infrastructure groups stay ON so a lockdown never kills
+        // virtual machines. The same widening belongs upstream in
+        // Engines.Firewall/Profiles.fs.
+
+        private static readonly string[] ShieldWhitelistDisplay = { "mDNS", "Core Networking" };
+
+        // Raw-group tokens (resource-string groups like icsvc.dll,-700 and
+        // the WSL ms-resource package group never resolve to a friendly
+        // name) — matched case-insensitively against the raw grouping.
+        private static readonly string[] ShieldWhitelistRawTokens =
         {
-            // Disable ALL rules, then re-enable whitelisted groups
+            "icsvc",                 // Hyper-V Host Compute Service (Virtual Machine rules)
+            "SubsystemForLinux",     // WSL store-package group (ms-resource://...SubsystemForLinux...)
+            "Hyper-V",
+            "Virtual Machine",
+            "VirtualMachine",
+            "WSL",
+            "HNS",                   // Host Network Service (vSwitch/NAT plumbing)
+            "wslservice",
+            "vmcompute",
+        };
+
+        private static bool ShieldWhitelisted(string display, string rawGroup)
+        {
+            foreach (var wl in ShieldWhitelistDisplay)
+                if (display.Equals(wl, StringComparison.OrdinalIgnoreCase) ||
+                    rawGroup.Equals(wl, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            foreach (var token in ShieldWhitelistRawTokens)
+                if (rawGroup.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    display.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            return false;
+        }
+
+        private Task<GroupToggleResult> ApplyShieldUp()
+        {
+            // Disable ALL grouped rules, then re-enable the whitelist
             return Task.Run(() =>
             {
-                var result = new FirewallService.GroupToggleResult { GroupName = "Shield Up (block all)" };
+                    var result = new GroupToggleResult { GroupName = "Shield Up (block all)" };
                 try
                 {
                     Type fwPolicyType = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
                     dynamic fwPolicy = Activator.CreateInstance(fwPolicyType);
                     int disabledCount = 0;
                     int whitelistEnabled = 0;
+                    bool vmSpared = false;
 
                     // Pass 1: Disable everything with a group
                     foreach (dynamic rule in fwPolicy.Rules)
@@ -126,8 +173,8 @@ namespace ShieldsUp.Core.Services
                         }
                     }
 
-                    // Pass 2: Re-enable whitelisted groups
-                    var whitelist = new[] { "mDNS", "Core Networking" };
+                    // Pass 2: Re-enable whitelisted groups (networking basics
+                    // + VM infrastructure — see the note above)
                     foreach (dynamic rule in fwPolicy.Rules)
                     {
                         try
@@ -135,17 +182,10 @@ namespace ShieldsUp.Core.Services
                             string group = rule.Grouping ?? "";
                             if (string.IsNullOrEmpty(group)) continue;
                             string display = FirewallService.ResolveGroupName(group);
-                            bool whitelisted = false;
-                            foreach (var wl in whitelist)
-                            {
-                                if (display.Equals(wl, StringComparison.OrdinalIgnoreCase) ||
-                                    group.Equals(wl, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    whitelisted = true;
-                                    break;
-                                }
-                            }
-                            if (!whitelisted) continue;
+                            if (!ShieldWhitelisted(display, group)) continue;
+                            if (!display.Equals("mDNS", StringComparison.OrdinalIgnoreCase) &&
+                                !display.Equals("Core Networking", StringComparison.OrdinalIgnoreCase))
+                                vmSpared = true;
 
                             bool wasEnabled = (bool)rule.Enabled;
                             rule.Enabled = true;
@@ -160,7 +200,8 @@ namespace ShieldsUp.Core.Services
                         }
                     }
 
-                    result.Notes = $"{disabledCount} grouped rule(s) disabled, {whitelistEnabled} whitelist rule(s) processed for re-enable";
+                    result.Notes = $"{disabledCount} grouped rule(s) disabled, {whitelistEnabled} whitelist rule(s) " +
+                                   $"re-enabled{(vmSpared ? " (VM networking spared)" : "")}";
                 }
                 catch (Exception ex)
                 {
@@ -169,16 +210,6 @@ namespace ShieldsUp.Core.Services
                 }
                 return result;
             });
-        }
-
-        private Task<FirewallService.GroupToggleResult> EnableGroup(string group)
-        {
-            return FirewallService.Instance.ToggleGroupAsync(group, true);
-        }
-
-        private Task<FirewallService.GroupToggleResult> DisableGroup(string group)
-        {
-            return FirewallService.Instance.ToggleGroupAsync(group, false);
         }
     }
 }

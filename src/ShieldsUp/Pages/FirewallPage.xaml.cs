@@ -194,7 +194,7 @@ public sealed partial class FirewallPage : Page
         ProfileStatusText.Text = "Disabling all block rules…";
         try
         {
-            var result = await FirewallService.Instance.SetAllAutoCommandBlocksEnabledAsync(false);
+            var result = await FirewallService.Instance.SetAllBlocksEnabledAsync(false);
             ProfileStatusText.Text = $"Restore Internet: {result.Matched} block rule(s) matched, {result.Changed} disabled"
                                      + (result.FirstError != null ? $" — {result.FirstError}" : "");
             await Helpers.Dialogs.Inform(

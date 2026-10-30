@@ -89,6 +89,22 @@
                     </StackPanel>
                 </Border>
 
+                <!-- AI access (assistant, read-only) -->
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="AI access" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock Text="Let an AI assistant (e.g. ZCode) READ this machine's firewall state over a loopback-only, token-guarded session: rule summaries and rule listings, the same data this app's Firewall page shows. Read-only — the assistant can never change a rule. The session ends when you stop it or close Shields Up."
+                                   Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="StartAgentBtn" Content="Start session"
+                                    Style="{StaticResource PrimaryButton}" Click="StartAgentBtn_Click" />
+                            <Button x:Name="StopAgentBtn" Content="Stop session" IsEnabled="False"
+                                    Click="StopAgentBtn_Click" />
+                        </StackPanel>
+                        <TextBlock x:Name="AgentStatusText" Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Footnote -->
                 <Border Style="{StaticResource CardPanel}" BorderThickness="0" Background="Transparent">
                     <StackPanel Spacing="4" HorizontalAlignment="Center">

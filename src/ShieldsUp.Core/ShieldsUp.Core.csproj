@@ -12,8 +12,28 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Management" Version="10.0.12" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.12" />
+    <!-- 10.0.13 to match the engine closure (Contain.Core and its engines
+         reference the same packages; a lower pin here is a downgrade error) -->
+    <PackageReference Include="System.Management" Version="10.0.13" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.13" />
+  </ItemGroup>
+
+  <!-- The AutoCommand III engine stack, pinned by submodule: the F# engines
+       (Engines.Firewall / Engines.Core, plus their transitive closure through
+       Contain.Core) replace the pre-II AutoCommand services this core used
+       to vendor. Shields Up is AutoCommand-family: it manages the same
+       AC-BLOCK rule family, so the engine keeps the autocommand naming.
+       Bump the submodule pin deliberately - engine fixes ride with it. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\external\autocommand-iii\core\AutoCommand.Contain.Core\AutoCommand.Contain.Core.csproj" />
+    <ProjectReference Include="..\..\external\autocommand-iii\Engines\Engines.Bridge\Engines.Bridge.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- engine types under the names this core's call sites already use -->
+    <Using Include="FirewallService = AutoCommand.Contain.Core.FirewallService" />
+    <Using Include="GroupToggleResult = AutoCommand.Engines.Firewall.GroupToggleResult" />
+    <Using Include="FleetToggleResult = AutoCommand.Engines.Firewall.FleetToggleResult" />
   </ItemGroup>
 
   <ItemGroup>

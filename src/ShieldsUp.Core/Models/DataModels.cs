@@ -43,41 +43,8 @@ namespace ShieldsUp.Core.Models
         public bool IsSystem { get; set; }
     }
 
-    public class FirewallRuleItem : System.ComponentModel.INotifyPropertyChanged
-    {
-        public string Name { get; set; }
-        public string DisplayName { get; set; }
-        public string DisplayGroup { get; set; }
-        public string Direction { get; set; }
-        public string Action { get; set; }
-        public string Profile { get; set; }
-        public string Program { get; set; }
-        public string Protocol { get; set; }
-        public string LocalPort { get; set; }
-        public string RemotePort { get; set; }
-        public string RemoteAddress { get; set; }
-
-        private bool _enabled;
-        public bool Enabled
-        {
-            get => _enabled;
-            set
-            {
-                if (_enabled != value)
-                {
-                    _enabled = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(EnabledDisplay));
-                }
-            }
-        }
-
-        public string EnabledDisplay => Enabled ? "Yes" : "No";
-
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
-        }
-    }
+    // FirewallRuleItem now lives in the shared engine: the app-wide using
+    // alias maps it to AutoCommand.Engines.Firewall.RuleInfo, which carries
+    // the same fields and the same INotifyPropertyChanged enable-toggle
+    // behavior this local copy implemented.
 }

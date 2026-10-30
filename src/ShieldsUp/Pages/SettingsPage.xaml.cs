@@ -1,5 +1,6 @@
 #nullable enable
 using System.Diagnostics;
+using ShieldsUp.Core.Agent;
 using ShieldsUp.Core.Services;
 
 namespace ShieldsUp.Pages;
@@ -8,6 +9,10 @@ public sealed partial class SettingsPage : Page
 {
     private readonly Core.Services.UpdateCheckService _updates = new();
     private Core.Services.UpdateCheckService.UpdateInfo? _lastUpdate;
+
+    // AI access card: 2s status refresh while the page is visible (the same
+    // cadence AutoCommand's Be My Guest tab uses)
+    private readonly DispatcherTimer _agentRefresh = new() { Interval = TimeSpan.FromSeconds(2) };
 
     public SettingsPage()
     {
@@ -19,11 +24,60 @@ public sealed partial class SettingsPage : Page
             Core.Services.UpdateCheckService.GetCurrentVersion());
         VersionValueText.Text = current;
         UpdateStatusText.Text = $"You are running {current}. Check against the GitHub release for a newer version.";
+
+        _agentRefresh.Tick += (_, _) => RefreshAgentUi();
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await CheckStartupTask();
+        RefreshAgentUi();
+        _agentRefresh.Start();
+    }
+
+    protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        _agentRefresh.Stop();
+        base.OnNavigatedFrom(e);
+    }
+
+    // ── AI access (read-only assistant session over the shared engine) ──
+
+    private void RefreshAgentUi()
+    {
+        var bridge = ShieldsUpAgentBridge.Instance;
+        bool running = bridge.IsRunning;
+        StartAgentBtn.IsEnabled = !running;
+        StopAgentBtn.IsEnabled = running;
+        AgentStatusText.Text = running
+            ? $"Session ACTIVE · 127.0.0.1:{bridge.Port} · client: {bridge.ClientName} · {bridge.ConnectedCalls} call(s). " +
+              "Read-only: the assistant sees firewall state, changes nothing."
+            : "Session off. An assistant connecting now is told no session exists.";
+    }
+
+    private async void StartAgentBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await Helpers.Dialogs.Confirm(
+                "Start a READ-ONLY AI access session?\n\n" +
+                "An AI assistant (e.g. ZCode) will be able to READ this machine's firewall state —\n" +
+                "rule summaries and rule listings, exactly what the Firewall page shows.\n\n" +
+                "• The assistant can never change a rule — this surface has no write tools.\n" +
+                "• Every call is guarded by a per-session token; the endpoint is loopback-only.\n" +
+                "• The session ends when you stop it or close Shields Up.\n\n" +
+                "Start the session?",
+                "AI access — consent"))
+            return;
+
+        var (ok, message) = ShieldsUpAgentBridge.Start();
+        if (!ok)
+            await Helpers.Dialogs.Error(message, "AI access");
+        RefreshAgentUi();
+    }
+
+    private void StopAgentBtn_Click(object sender, RoutedEventArgs e)
+    {
+        ShieldsUpAgentBridge.Stop();
+        RefreshAgentUi();
     }
 
     private async Task CheckStartupTask()

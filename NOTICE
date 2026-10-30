@@ -5,6 +5,9 @@ This product includes code derived from AutoCommand, a Windows security
 toolkit by Dan Park (https://github.com/dparksports/autocommand-windows).
 Engine code in ShieldsUp.Core (helpers, services,
 models) was extracted from AutoCommand and adapted to a WinUI 3 front end.
+The firewall engine, rule models and AI-access bridge now come directly
+from dparksports/autocommand-iii (Apache-2.0), pinned as a git submodule
+under external/autocommand-iii.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use this file except in compliance with the License. You may obtain
