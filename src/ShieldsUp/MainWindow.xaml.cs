@@ -146,6 +146,24 @@ public sealed partial class MainWindow : Window
 
             string ico = Path.Combine(AppContext.BaseDirectory, "Assets", "ShieldsUp.ico");
             if (File.Exists(ico)) appWnd.SetIcon(ico);
+
+            // Caption buttons (minimize / maximize / close) are system-drawn
+            // overlays whose GLYPH color otherwise follows the OS theme. The
+            // title bar below them is hard-coded white, so on a dark-theme
+            // Windows session they rendered white-on-white — invisible until
+            // hover painted a background behind them. Pin every state to the
+            // app's light palette so the buttons are always drawn for the
+            // chrome they actually sit on.
+            var titleBar = appWnd.TitleBar;
+            var glyph = Windows.UI.Color.FromArgb(0xFF, 0x1D, 0x1D, 0x1F);   // the title text's near-black
+            titleBar.ButtonForegroundColor = glyph;
+            titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);  // white bar shows through
+            titleBar.ButtonHoverForegroundColor = glyph;
+            titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(0xFF, 0xE9, 0xE9, 0xE9);
+            titleBar.ButtonPressedForegroundColor = glyph;
+            titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(0xFF, 0xD9, 0xD9, 0xD9);
+            titleBar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(0xFF, 0x9A, 0x9A, 0x9A);
+            titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
         }
         catch
         {
