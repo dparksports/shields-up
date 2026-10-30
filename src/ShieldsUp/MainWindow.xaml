@@ -8,7 +8,13 @@
     mc:Ignorable="d"
     Title="Shields Up">
 
-    <Grid>
+    <!-- The ROOT carries the app's light identity: RequestedTheme stops every
+         default theme brush (separators, hairline borders, the window
+         backdrop) from resolving against a dark OS session — which is what
+         drew the dark lines between the top bar, the nav pane and the
+         content — and the white Background leaves no pixel for the
+         theme-dependent window backdrop to bleed through. -->
+    <Grid RequestedTheme="Light" Background="#FFFFFF">
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
             <RowDefinition Height="*" />
