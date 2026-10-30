@@ -22,18 +22,23 @@ public static class Dialogs
         };
     }
 
-    public static async Task Inform(string title, string message)
+    // Parameter order is (message, title) on purpose: every call site in the
+    // app passes the long body first and the short heading second, and with
+    // the old (title, message) signature the multi-paragraph body rendered in
+    // the big bold Title slot while the heading became the body. The swap
+    // fixes all ~77 call sites without touching them.
+    public static async Task Inform(string message, string title)
     {
         await Build(title, message, "OK", "OK", ContentDialogButton.Primary).ShowAsync();
     }
 
-    public static async Task Error(string title, string message)
+    public static async Task Error(string message, string title)
     {
         await Build($"⚠ {title}", message, "OK", "OK", ContentDialogButton.Primary).ShowAsync();
     }
 
     /// <summary>MessageBoxResult.Yes style confirmation.</summary>
-    public static async Task<bool> Confirm(string title, string message, string yes = "Yes", string no = "No",
+    public static async Task<bool> Confirm(string message, string title, string yes = "Yes", string no = "No",
         bool defaultIsPrimary = true)
     {
         var dlg = Build(title, message, yes, no,

@@ -509,17 +509,28 @@ namespace ShieldsUp.Core.Services
                 // Execute the native removal command
                 var deploymentOperation = packageManager.RemovePackageAsync(fullName);
 
-                // Await completion natively without spinning up external processes
-                var tcs = new TaskCompletionSource<bool>();
+                // Await completion natively without spinning up external
+                // processes. A stuck deployment previously hung forever; a
+                // failure surfaced as a bare false with the WinRT error text
+                // discarded, so the caller could only guess.
+                var tcs = new TaskCompletionSource<(bool Ok, string Error)>();
                 deploymentOperation.Completed = (info, status) =>
                 {
                     if (status == Windows.Foundation.AsyncStatus.Completed)
-                        tcs.SetResult(true);
+                        tcs.SetResult((true, null));
                     else
-                        tcs.SetResult(false);
+                    {
+                        // the WinRT error text is only reachable by calling
+                        // GetResults(), which throws with the real reason
+                        try { deploymentOperation.GetResults(); tcs.SetResult((false, "unknown error")); }
+                        catch (Exception getEx) { tcs.SetResult((false, getEx.Message)); }
+                    }
                 };
 
-                return await tcs.Task;
+                var (ok, error) = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(120));
+                if (!ok)
+                    AppLogger.Log("AppManager", $"Uninstall of '{fullName}' failed: {error}");
+                return ok;
             }
             catch (Exception ex)
             {

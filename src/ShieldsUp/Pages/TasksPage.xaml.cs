@@ -62,6 +62,8 @@ public sealed partial class TasksPage : Page
     {
         string path = GetSelectedTaskFullPath();
         if (path == null) return;
+        if (!await Helpers.Dialogs.Confirm($"Disable scheduled task '{path.Split('\\').Last()}'?", "Disable task",
+                yes: "Disable", no: "Cancel")) return;
         try
         {
             await TaskSchedulerService.Instance.SetTaskEnabledAsync(path, false);
@@ -77,6 +79,8 @@ public sealed partial class TasksPage : Page
     {
         string path = GetSelectedTaskFullPath();
         if (path == null) return;
+        if (!await Helpers.Dialogs.Confirm($"Enable scheduled task '{path.Split('\\').Last()}'?", "Enable task",
+                yes: "Enable", no: "Cancel")) return;
         try
         {
             await TaskSchedulerService.Instance.SetTaskEnabledAsync(path, true);
@@ -92,6 +96,8 @@ public sealed partial class TasksPage : Page
     {
         string path = GetSelectedTaskFullPath();
         if (path == null) return;
+        if (!await Helpers.Dialogs.Confirm($"Run scheduled task '{path.Split('\\').Last()}' now?", "Run task",
+                yes: "Run", no: "Cancel")) return;
         try
         {
             await TaskSchedulerService.Instance.RunTaskAsync(path);
@@ -108,6 +114,8 @@ public sealed partial class TasksPage : Page
     {
         string path = GetSelectedTaskFullPath();
         if (path == null) return;
+        if (!await Helpers.Dialogs.Confirm($"Stop the running task '{path.Split('\\').Last()}'?", "Stop task",
+                yes: "Stop", no: "Cancel")) return;
         try
         {
             await TaskSchedulerService.Instance.StopTaskAsync(path);

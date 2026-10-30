@@ -110,24 +110,34 @@ public sealed partial class AttackSurfacePage : Page
                         "Disable SSTP & Miniports", yes: "OK", no: "Cancel"))
                     return;
 
+                List<string> failures = null;
                 await Task.Run(() =>
                 {
                     ServiceHelper.StopAndDisable("SstpSvc");
-                    WanMiniportRemover.SetSstpMiniportsEnabled(false);
+                    failures = WanMiniportRemover.SetSstpMiniportsEnabled(false);
                 });
 
                 SstpToggleBtn.Content = "Re-enable Service & Miniports";
+                if (failures is { Count: > 0 })
+                    await Helpers.Dialogs.Inform(
+                        "Some miniport adapters could not be disabled:\n" + string.Join("\n", failures),
+                        "Partial disable");
             }
             else
             {
                 // ── ENABLE path ──
+                List<string> failures = null;
                 await Task.Run(() =>
                 {
-                    WanMiniportRemover.SetSstpMiniportsEnabled(true);
+                    failures = WanMiniportRemover.SetSstpMiniportsEnabled(true);
                     ServiceHelper.EnableAndStart("SstpSvc");
                 });
 
                 SstpToggleBtn.Content = "Disable + Neuter Miniports";
+                if (failures is { Count: > 0 })
+                    await Helpers.Dialogs.Inform(
+                        "Some miniport adapters could not be re-enabled:\n" + string.Join("\n", failures),
+                        "Partial enable");
             }
         }
         catch (Exception ex)
@@ -228,7 +238,8 @@ public sealed partial class AttackSurfacePage : Page
 
     private async void KdnetToggleBtn_Click(object sender, RoutedEventArgs e)
     {
-        string output = ProcessRunner.Run("bcdedit", "/enum {current}");
+        // bcdedit can take seconds; off the UI thread like LoadKdnetStatus
+        string output = await ProcessRunner.RunAsync("bcdedit", "/enum {current}");
         bool debugOn = output.Contains("debug") && output.Contains("Yes");
 
         if (debugOn)

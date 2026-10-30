@@ -125,8 +125,26 @@ public sealed partial class FirewallPage : Page
     {
         if (RulesGrid.SelectedItem is not FirewallRuleItem rule) return;
         bool newState = !rule.Enabled;
-        await FirewallService.Instance.ToggleRuleAsync(rule.Name, newState);
-        rule.Enabled = newState;
+        try
+        {
+            await FirewallService.Instance.ToggleRuleAsync(rule.Name, newState);
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Failed to toggle '{rule.DisplayName}': {ex.Message}", "Toggle rule");
+            return;
+        }
+        // The engine swallows per-rule COM failures (protected rules, access
+        // denied) and reports nothing, so the row is re-read from a fresh
+        // policy load instead of assuming the write landed.
+        int direction = InboundRadio.IsChecked == true ? 1 : 2;
+        var fresh = await FirewallService.Instance.LoadRulesAsync(direction);
+        var actual = fresh.FirstOrDefault(r => string.Equals(r.Name, rule.Name, StringComparison.OrdinalIgnoreCase));
+        rule.Enabled = actual?.Enabled ?? newState;
+        if (actual == null || actual.Enabled != newState)
+            await Helpers.Dialogs.Error(
+                $"The toggle did not take effect for '{rule.DisplayName}' — the rule may be protected by policy.",
+                "Toggle rule");
     }
 
     private async void EnableGroup_Click(object sender, RoutedEventArgs e) => await ToggleGroup(enable: true);

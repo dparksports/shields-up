@@ -33,8 +33,11 @@ public sealed partial class UpdateControlPage : Page
         if (_isInitialized) return;
         _isInitialized = true;
 
-        // Show already-frozen apps even before a discovery scan
-        await RefreshRowsAsync(_freezeService.DiscoverCandidates());
+        // Show already-frozen apps even before a discovery scan — the
+        // discovery is a filesystem walk, so keep it off the UI thread
+        // (DiscoverBtn_Click already does; this is the same for page load)
+        var initial = await Task.Run(() => _freezeService.DiscoverCandidates());
+        await RefreshRowsAsync(initial);
     }
 
     private async void DiscoverBtn_Click(object sender, RoutedEventArgs e)

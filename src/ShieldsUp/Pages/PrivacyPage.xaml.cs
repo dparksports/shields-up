@@ -68,11 +68,23 @@ public sealed partial class PrivacyPage : Page
 
     private async void VpnDisableBtn_Click(object sender, RoutedEventArgs e)
     {
-        await Task.Run(() =>
+        if (!await Helpers.Dialogs.Confirm(
+                "Stop and disable the Windows VPN services (RasMan, IKEEXT, PolicyAgent, RemoteAccess)?\n\n" +
+                "Any VPN connection you rely on will drop until you re-enable them.",
+                "Disable VPN services", yes: "Disable", no: "Cancel"))
+            return;
+        try
         {
-            foreach (var svc in VpnServices)
-                ServiceHelper.StopAndDisable(svc);
-        });
+            await Task.Run(() =>
+            {
+                foreach (var svc in VpnServices)
+                    ServiceHelper.StopAndDisable(svc);
+            });
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Failed to disable VPN services: {ex.Message}", "Disable VPN services");
+        }
         await CheckVpnStatus();
     }
 

@@ -70,9 +70,11 @@ namespace ShieldsUp.Core.Services
                         {
                             folderPath = fullPath.Substring(0, lastSlash);
                             // Simplify Microsoft\Windows paths
-                            if (folderPath.StartsWith(@"\Microsoft\Windows"))
+                            // trailing slash: \Microsoft\WindowsCE is a DIFFERENT
+                            // folder and must not be treated as the Windows folder
+                            if (folderPath.StartsWith(@"\Microsoft\Windows\", StringComparison.OrdinalIgnoreCase))
                             {
-                                folderPath = folderPath.Substring(@"\Microsoft\Windows".Length);
+                                folderPath = folderPath.Substring(@"\Microsoft\Windows\".Length);
                                 if (folderPath.StartsWith("\\")) folderPath = folderPath.Substring(1);
                                 if (string.IsNullOrEmpty(folderPath)) folderPath = "Windows System";
                             }

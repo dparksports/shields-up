@@ -572,6 +572,13 @@ namespace ShieldsUp.Core.Services
         /// </summary>
         public async Task<bool> CheckRecentDnsLookupAsync(string domain)
         {
+            // The domain comes from the user-editable telemetry_rules.json and
+            // is interpolated into a powershell -Command string — validate to
+            // the same standard the hosts-pin path already applies, or a
+            // tampered rules file is arbitrary elevated command execution.
+            if (string.IsNullOrWhiteSpace(domain) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(domain, @"^[A-Za-z0-9.-]+$"))
+                return false;
             var ps = $"if (Get-DnsClientCache -ErrorAction SilentlyContinue | Where-Object {{ $_.Entry -like '*{domain}*' }}) {{ 'SEEN' }} else {{ 'CLEAN' }}";
             var (output, _, _) = await ProcessRunner.RunWithDetailsAsync("powershell.exe",
                 $"-NoProfile -NonInteractive -Command \"{ps}\"");

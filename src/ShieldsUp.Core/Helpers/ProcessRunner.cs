@@ -38,6 +38,9 @@ namespace ShieldsUp.Core.Helpers
             if (outputEncoding != null)
                 proc.StartInfo.StandardOutputEncoding = outputEncoding;
             proc.Start();
+            // Drain stderr concurrently: a child that fills the stderr pipe
+            // while we block on stdout deadlocks the classic way.
+            using var _errDrain = proc.StandardError.ReadToEndAsync();
             string output = proc.StandardOutput.ReadToEnd();
             proc.WaitForExit();
             return StripNullChars(output);
@@ -58,9 +61,12 @@ namespace ShieldsUp.Core.Helpers
                 }
             };
             proc.Start();
+            // Read both pipes concurrently — sequential ReadToEnd calls
+            // deadlock when the child fills the second pipe first.
+            var errTask = proc.StandardError.ReadToEndAsync();
             string output = proc.StandardOutput.ReadToEnd();
-            string error = proc.StandardError.ReadToEnd();
             proc.WaitForExit();
+            string error = errTask.GetAwaiter().GetResult();   // pipes closed at exit — completes immediately
             return (StripNullChars(output), StripNullChars(error), proc.ExitCode);
         }
 
@@ -80,7 +86,9 @@ namespace ShieldsUp.Core.Helpers
         }
 
         /// <summary>
-        /// Fire-and-forget execution. Returns immediately.
+        /// Runs hidden and WAITS for exit — several callers rely on the wait
+        /// for ordering. Despite the historical name this is not
+        /// fire-and-forget; the name is kept only for call-site stability.
         /// </summary>
         public static void RunDetached(string fileName, string arguments)
         {

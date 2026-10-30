@@ -17,7 +17,11 @@ namespace ShieldsUp.Core.Helpers
 
         public static string GetInstallCommand(string path)
         {
-            return $"Set-SecureBootUEFI -Name dbx -ContentFilePath '{path}'";
+            // -ErrorAction Stop + $? propagation: a REJECTED Set-SecureBootUEFI
+            // is a non-terminating cmdlet error that still exits 0 — without
+            // this the page reported "applied successfully" for a rejected write.
+            return $"Set-SecureBootUEFI -Name dbx -ContentFilePath '{path}' -ErrorAction Stop; " +
+                   "if (-not $?) { exit 1 }";
         }
 
         public static async Task<(string Path, string Checksum, string Error)> DownloadUpdateAsync()

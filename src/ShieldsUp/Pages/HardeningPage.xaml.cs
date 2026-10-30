@@ -47,7 +47,20 @@ public sealed partial class HardeningPage : Page
 
     private async void Ipv6DisableBtn_Click(object sender, RoutedEventArgs e)
     {
-        await Task.Run(() => RegistryHelper.SetIpv6DisabledStatus(true));
+        if (!await Helpers.Dialogs.Confirm(
+                "Disable IPv6 system-wide via registry (DisabledComponents=0xFF)?\n\n" +
+                "Networks and services that require IPv6 will stop working until it is re-enabled. A reboot is required.",
+                "Disable IPv6", yes: "Disable", no: "Cancel"))
+            return;
+        try
+        {
+            await Task.Run(() => RegistryHelper.SetIpv6DisabledStatus(true));
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Failed to disable IPv6: {ex.Message}", "Disable IPv6");
+            return;
+        }
         await CheckIpv6Status();
         await Helpers.Dialogs.Inform("IPv6 has been disabled via registry (DisabledComponents=0xFF). A reboot is required.", "Info");
     }
@@ -77,7 +90,20 @@ public sealed partial class HardeningPage : Page
 
     private async void LsaEnableBtn_Click(object sender, RoutedEventArgs e)
     {
-        await Task.Run(() => RegistryHelper.SetLsaProtectionStatus(true));
+        if (!await Helpers.Dialogs.Confirm(
+                "Enable LSA Protection (RunAsPPL)?\n\n" +
+                "Third-party credential providers or VPN plug-ins that hook LSA may stop working at next boot.",
+                "Enable LSA Protection", yes: "Enable", no: "Cancel"))
+            return;
+        try
+        {
+            await Task.Run(() => RegistryHelper.SetLsaProtectionStatus(true));
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Failed to enable LSA Protection: {ex.Message}", "Enable LSA Protection");
+            return;
+        }
         await CheckLsaStatus();
         await Helpers.Dialogs.Inform("LSA Protection enabled. A reboot is required for this to take effect.", "Info");
     }
@@ -112,7 +138,19 @@ public sealed partial class HardeningPage : Page
 
     private async void UacRelaxBtn_Click(object sender, RoutedEventArgs e)
     {
-        await Task.Run(() => RegistryHelper.SetUacStrictness(false));
+        if (!await Helpers.Dialogs.Confirm(
+                "Relax UAC from maximum strictness? This lowers the system's elevation security.",
+                "Relax UAC", yes: "Relax", no: "Cancel"))
+            return;
+        try
+        {
+            await Task.Run(() => RegistryHelper.SetUacStrictness(false));
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Failed to change UAC: {ex.Message}", "Relax UAC");
+            return;
+        }
         await CheckUacStatus();
     }
 
