@@ -29,16 +29,22 @@ if ($LASTEXITCODE -ne 0) { throw "publish failed" }
 # WinAppSDK 2.5's self-contained layout deploys its AI/Foundry feature set
 # (~50 MB: onnxruntime, DirectML, the Microsoft.Windows.AI.* projections,
 # Semantic Search) with every app whether or not the app calls those APIs.
-# This app calls none of them. Evidence the set is inert here: a text-mode
-# scan of every remaining binary finds no reference to any of these files —
-# the only mentions anywhere are (a) each other, (b) the Windows API surface
-# projection monolith (Microsoft.Windows.SDK.NET.dll projects EVERY Windows
-# API as strings; projecting is not loading), and (c) ShieldsUp.dll's
-# embedded WinRT activation manifest, which REGISTERS every shipped file's
-# classes and only touches one when a class is activated (nothing activates
-# these).
-# Deliberately NOT pruned (referenced as strings by core startup-path DLLs
-# Microsoft.WinUI / Microsoft.Internal.FrameworkUdk — string != load, but
+# This app calls none of them.
+#
+# CAUTION (learned 2026-10-31 the hard way — v2026.10.30.3/.4 shipped broken
+# for exactly this): Microsoft.InteractiveExperiences.Projection.dll is NOT
+# prunable. It sits in no import table, so a text-mode scan sees nothing,
+# but Microsoft.WinUI.dll Assembly.Load-probes it BY NAME (no .dll suffix —
+# that is why the scan missed it) while initializing XAML. If it is missing
+# the process fail-fasts inside Microsoft.UI.Xaml.dll (0xc000027b, inner
+# 0x80070002) before the logger initializes: no window, no log line, just a
+# WER APPCRASH. Bisection on the restored build confirmed launch succeeds
+# iff this file is present; the rest of the AI/Search set IS inert at
+# startup (the app never calls those APIs). If a future SDK bump stops
+# shipping the file, remove the keep-note then.
+#
+# Deliberately NOT pruned as well (referenced as strings by core startup-path
+# DLLs Microsoft.WinUI / Microsoft.Internal.FrameworkUdk — string != load, but
 # the whole family is ~1.4 MB and not worth the bet): Microsoft.Windows
 # .Workloads* + workloads*.json, Microsoft.Graphics.Imaging*.
 # NOTE: the prune list is version-pinned to the WinAppSDK file layout —
@@ -49,15 +55,14 @@ $prunePatterns = @(
     'Microsoft.Windows.AI.*', 'Microsoft.Windows.Internal.AI.*',
     'Microsoft.Windows.Internal.SemanticSearch.winmd',
     'Microsoft.Windows.Search.*', 'Microsoft.Windows.SemanticSearch*.winmd',
-    'PerceptiveStreaming.dll', 'WinUIEdit.dll',
-    'Microsoft.InteractiveExperiences.Projection.dll'
+    'PerceptiveStreaming.dll', 'WinUIEdit.dll'
 )
 $pruned = @()
 foreach ($pat in $prunePatterns) {
     $pruned += @(Get-ChildItem $publishDir -File -Filter $pat -ErrorAction SilentlyContinue)
 }
-if ($pruned.Count -lt 35) {
-    Write-Warning "prune matched only $($pruned.Count) files (expected ~45) - WinAppSDK layout may have changed; review the prune list"
+if ($pruned.Count -lt 34) {
+    Write-Warning "prune matched only $($pruned.Count) files (expected ~37) - WinAppSDK layout may have changed; review the prune list"
 }
 $saved = ($pruned | Measure-Object -Property Length -Sum).Sum
 foreach ($f in $pruned) { Remove-Item $f.FullName -Force }
