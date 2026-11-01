@@ -1,5 +1,16 @@
 # Shields Up
 
+> 🚚 **Shields Up has moved into AutoCommand.** The four rituals — junk out,
+> firewall presets, doors closed, phone-home silenced — are now a tab inside
+> [AutoCommand](https://github.com/dparksports/autocommand), the visibility app
+> they grew out of: one download, one data folder, one AI bridge, and the
+> firewall baseline re-captured atomically with every preset. This standalone
+> app keeps working and its releases stay up, but new work happens in
+> AutoCommand — and the Shields Up tab offers to import this app's state
+> (edited bloatware list, telemetry revert history, freeze ledger) on first
+> open. **[AutoCommand repo](https://github.com/dparksports/autocommand) ·
+> [Download the latest release](https://github.com/dparksports/autocommand/releases/latest)**
+
 ![Shields Up](docs/img/hero.png)
 
 ## Sound familiar?
