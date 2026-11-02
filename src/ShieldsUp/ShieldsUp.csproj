@@ -13,7 +13,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2026.11.2</Version>
+    <Version>2026.11.3</Version>
     <Product>Shields Up</Product>
     <DefaultLanguage>en-US</DefaultLanguage>
     <ApplicationIcon>Assets\ShieldsUp.ico</ApplicationIcon>
