@@ -225,8 +225,8 @@ public sealed partial class MainWindow : Window
                 var (fallbackWidth, fallbackHeight) = LoadSavedSizeDip(scale);
                 appWnd.Resize(new Windows.Graphics.SizeInt32
                 {
-                    Width = Math.Max(720, fallbackWidth ?? 1284),
-                    Height = Math.Max(520, fallbackHeight ?? 850),
+                    Width = Math.Max(720, fallbackWidth ?? Core.Layout.WindowPlacement.DesignWidth),
+                    Height = Math.Max(520, fallbackHeight ?? Core.Layout.WindowPlacement.DesignHeight),
                 });
                 SetIconAndCaptionColors(appWnd);
                 return;
@@ -238,7 +238,8 @@ public sealed partial class MainWindow : Window
 
             // Never request more than the desktop can show. A fresh Windows
             // install is the worst case (basic display adapter: 800x600), and
-            // a 1284x850 request there puts the caption buttons off-screen.
+            // the 1038x868 design request there puts the caption buttons
+            // off-screen.
             var (savedWidth, savedHeight) = LoadSavedSizeDip(scale);
             var plan = Core.Layout.WindowPlacement.Compute(workWidthDip, workHeightDip, savedWidth, savedHeight);
 

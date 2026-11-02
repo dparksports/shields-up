@@ -19,9 +19,9 @@ namespace ShieldsUp.Core.Layout;
 /// </summary>
 public static class WindowPlacement
 {
-    /// <summary>The size the layout was designed at (1284x850 DIPs).</summary>
-    public const int DesignWidth = 1284;
-    public const int DesignHeight = 850;
+    /// <summary>The size the layout was designed at (1038x868 DIPs).</summary>
+    public const int DesignWidth = 1038;
+    public const int DesignHeight = 868;
 
     /// <summary>Smallest width/height the responsive page layout is built for.</summary>
     public const int MinWidth = 720;

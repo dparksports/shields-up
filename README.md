@@ -109,7 +109,7 @@ device drivers requires it. A version that didn't ask couldn't do what it promis
 | ⚡ **Quick Scan** | The whole ritual as a checklist — reads your machine first, shows what's done, finishes the rest. |
 | 📡 **Attack Surface** | Green/amber count of every hidden entry point, then one-click shutoff for each kind. |
 | 🛡 **Firewall** | Presets, every rule in a sortable list, **Restore Internet** to undo all blocking at once. |
-| 📦 **Bloatware** | Uninstall preinstalled apps against an editable list; system components never offered. |
+| 📦 **Bloatware** | Uninstall preinstalled apps against an editable list; system components never offered. Windows apps you might keep — Camera, Paint, Snipping Tool, Weather, Clock, Clipchamp, Bing — are removable one at a time, on request. |
 | 📊 **Telemetry** | Each vendor's official opt-out, snapshotted and reversible, plus a "did it stop?" check. |
 | 👁 **Privacy** | VPN services, hidden hotspot adapters, kernel debug, the feedback task — switchable. |
 | ❄ **Update Control** | Freeze an app at its current version — it keeps working, its updater stops. |

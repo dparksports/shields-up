@@ -17,14 +17,60 @@ public sealed partial class BloatwarePage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await RefreshAppsList();
+        await LoadOptionalAppsAsync();
         ApplyResponsiveColumns(ActualWidth);
         ApplyResponsiveHeader(ActualWidth);
+    }
+
+    /// <summary>
+    /// Fills the "remove individual Microsoft apps" list with installed state.
+    /// Removal is per user and per package — same engine path as the row
+    /// Uninstall button, just scoped to the curated catalog.
+    /// </summary>
+    private async Task LoadOptionalAppsAsync()
+    {
+        try
+        {
+            OptionalAppsList.ItemsSource = await _appService.GetOptionalAppsAsync();
+        }
+        catch (Exception ex)
+        {
+            Core.Services.AppLogger.LogException("optional apps list", ex);
+        }
+    }
+
+    private async void RemoveOptionalApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.DataContext is not OptionalAppItem app || !app.CanRemove)
+            return;
+
+        if (!await Helpers.Dialogs.Confirm(
+                $"Remove {app.DisplayName}?\n\n{app.Note}\n\n" +
+                "This removes it for your account only. A feature update can bring it back, and you can " +
+                "reinstall it from the Microsoft Store at any time.",
+                $"Remove {app.DisplayName}"))
+            return;
+
+        btn.IsEnabled = false;
+        bool removed = await _appService.UninstallAppAsync(app.FullName);
+        if (removed)
+            await Helpers.Dialogs.Inform($"{app.DisplayName} removed.", "Removed");
+        else
+            await Helpers.Dialogs.Error(
+                $"Could not remove {app.DisplayName}. It may be protected, in use, or managed by your organization.",
+                "Not removed");
+
+        await RefreshAppsList();
+        await LoadOptionalAppsAsync();
     }
 
     private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         ApplyResponsiveColumns(e.NewSize.Width);
         ApplyResponsiveHeader(e.NewSize.Width);
+        // The optional-apps list scrolls inside its own box instead of pushing
+        // the app grid and the footer off a 800x600 window.
+        OptionalListScroller.MaxHeight = e.NewSize.Height < 700 ? 150 : 240;
     }
 
     /// <summary>Actions sit beside the title when there is room, under it when not.</summary>
@@ -105,6 +151,7 @@ public sealed partial class BloatwarePage : Page
         {
             RemoveBloatwareBtn.IsEnabled = true;
             await RefreshAppsList();
+            await LoadOptionalAppsAsync();
         }
     }
 
@@ -179,6 +226,7 @@ public sealed partial class BloatwarePage : Page
             {
                 await Helpers.Dialogs.Inform($"{app.Name} uninstalled successfully.", "Success");
                 await RefreshAppsList();
+                await LoadOptionalAppsAsync();
             }
             else
             {

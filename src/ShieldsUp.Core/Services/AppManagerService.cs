@@ -194,6 +194,70 @@ namespace ShieldsUp.Core.Services
         }
 
         /// <summary>
+        /// Resolves the "remove individual Microsoft apps" list: which of the
+        /// optional catalog entries are installed for this user, and under what
+        /// package full name (needed for per-app removal).
+        ///
+        /// Exact package-name matching only. Frameworks and resource bundles are
+        /// skipped; OS components (mstsc.exe) are reported as installed when the
+        /// binary exists, and are never removable.
+        /// </summary>
+        public async Task<List<OptionalAppItem>> GetOptionalAppsAsync()
+        {
+            return await Task.Run(() =>
+            {
+                var installed = new Dictionary<string, Windows.ApplicationModel.Package>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    var packageManager = new PackageManager();
+                    foreach (var p in packageManager.FindPackagesForUser(string.Empty))
+                    {
+                        try
+                        {
+                            if (p.IsFramework || p.IsResourcePackage) continue;
+                            installed[p.Id.Name] = p;
+                        }
+                        catch
+                        {
+                            // Skip packages whose metadata cannot be read
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"AppManagerService optional apps error: {ex.Message}");
+                }
+
+                var items = new List<OptionalAppItem>();
+                foreach (var def in Helpers.OptionalAppCatalog.Apps)
+                {
+                    var item = new OptionalAppItem
+                    {
+                        DisplayName = def.DisplayName,
+                        PackageName = def.PackageName,
+                        Note = def.Note,
+                        IsWindowsComponent = def.WindowsComponent,
+                    };
+
+                    if (def.WindowsComponent)
+                    {
+                        item.IsInstalled = System.IO.File.Exists(
+                            System.IO.Path.Combine(Environment.SystemDirectory, def.PackageName));
+                    }
+                    else if (installed.TryGetValue(def.PackageName, out var pkg))
+                    {
+                        item.IsInstalled = true;
+                        item.FullName = pkg.Id.FullName;
+                        item.Version = pkg.Id.Version.ToString();
+                    }
+
+                    items.Add(item);
+                }
+                return items;
+            });
+        }
+
+        /// <summary>
         /// Finds bloatware using the effective list: compiled-in defaults minus
         /// the user's opt-outs, plus user-added patterns and exact packages.
         /// </summary>

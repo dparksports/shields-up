@@ -10,11 +10,13 @@
     <Page.Resources>
         <conv:BloatwareStateConverter x:Key="BloatwareStateConverter" />
         <conv:SignatureStatusConverter x:Key="SignatureStatusConverter" />
+        <conv:TrueToVisibleConverter x:Key="TrueToVisible" />
     </Page.Resources>
 
     <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}"
           SizeChanged="Page_SizeChanged">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -65,8 +67,46 @@
             <TextBlock x:Name="AppCountText" Text="" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
         </StackPanel>
 
+        <!-- Optional Microsoft apps: shipped with Windows, deliberately kept out
+             of Remove Bloatware, removable one at a time on request. Collapsed
+             by default so the grid keeps its height on a 800x600 desktop. -->
+        <Expander x:Name="OptionalAppsExpander" Grid.Row="2" Margin="0,0,0,12"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                  Header="Remove individual Microsoft apps">
+            <StackPanel>
+                <TextBlock Text="Bing, Clock, Camera, Paint, Weather, Clipchamp, Snipping Tool and more ship with Windows, so Remove Bloatware leaves them alone. Take out only what you don't use — each one comes back from the Microsoft Store if you change your mind."
+                           Style="{StaticResource SubtleText}" Margin="0,0,0,6" />
+                <ScrollViewer x:Name="OptionalListScroller" MaxHeight="240"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="OptionalAppsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="12" Padding="0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Note}" Style="{StaticResource SubtleText}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource SubtleText}"
+                                               VerticalAlignment="Center" />
+                                    <Button Grid.Column="2" Content="Remove" Click="RemoveOptionalApp_Click"
+                                            Visibility="{Binding CanRemove, Converter={StaticResource TrueToVisible}}"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource DangerButton}" Padding="12,6" FontSize="12" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Expander>
+
         <!-- Apps List -->
-<Border Style="{StaticResource ContentPanel}" Grid.Row="2">
+<Border Style="{StaticResource ContentPanel}" Grid.Row="3">
         <controls:DataGrid x:Name="AppsDataGrid" Grid.Row="2" AutoGenerateColumns="False"
                            IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
@@ -107,7 +147,7 @@
         </Border>
 
         <!-- Footer Info -->
-        <Border Grid.Row="3" Margin="0,16,0,0" Style="{StaticResource CardPanel}" Padding="12">
+        <Border Grid.Row="4" Margin="0,16,0,0" Style="{StaticResource CardPanel}" Padding="12">
             <TextBlock Text="Note: Removing system-critical apps may cause instability. Use with caution. Signature status reflects the package's deployment-validated signature kind (Store / Enterprise signatures are valid); the signer is taken from the package publisher."
                        Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
         </Border>
