@@ -196,17 +196,15 @@ namespace ShieldsUp.Core.Services
         /// <summary>
         /// Resolves the "remove individual Microsoft apps" list: which of the
         /// optional catalog entries are installed for this user, and under what
-        /// package full name (needed for per-app removal).
-        ///
-        /// Exact package-name matching only. Frameworks and resource bundles are
-        /// skipped; OS components (mstsc.exe) are reported as installed when the
-        /// binary exists, and are never removable.
+        /// package full name (needed for per-app removal). The decision table
+        /// lives in <see cref="Helpers.OptionalAppResolver"/>; this method only
+        /// feeds it the installed-package inventory.
         /// </summary>
         public async Task<List<OptionalAppItem>> GetOptionalAppsAsync()
         {
             return await Task.Run(() =>
             {
-                var installed = new Dictionary<string, Windows.ApplicationModel.Package>(StringComparer.OrdinalIgnoreCase);
+                var packages = new List<Helpers.OptionalAppResolver.InstalledPackage>();
                 try
                 {
                     var packageManager = new PackageManager();
@@ -215,7 +213,8 @@ namespace ShieldsUp.Core.Services
                         try
                         {
                             if (p.IsFramework || p.IsResourcePackage) continue;
-                            installed[p.Id.Name] = p;
+                            packages.Add(new Helpers.OptionalAppResolver.InstalledPackage(
+                                p.Id.Name, p.Id.FullName, p.Id.Version.ToString(), SafeDisplayName(p)));
                         }
                         catch
                         {
@@ -228,33 +227,31 @@ namespace ShieldsUp.Core.Services
                     System.Diagnostics.Debug.WriteLine($"AppManagerService optional apps error: {ex.Message}");
                 }
 
+                int osBuild = Environment.OSVersion.Version.Build;
                 var items = new List<OptionalAppItem>();
                 foreach (var def in Helpers.OptionalAppCatalog.Apps)
                 {
-                    var item = new OptionalAppItem
-                    {
-                        DisplayName = def.DisplayName,
-                        PackageName = def.PackageName,
-                        Note = def.Note,
-                        IsWindowsComponent = def.WindowsComponent,
-                    };
-
-                    if (def.WindowsComponent)
-                    {
-                        item.IsInstalled = System.IO.File.Exists(
-                            System.IO.Path.Combine(Environment.SystemDirectory, def.PackageName));
-                    }
-                    else if (installed.TryGetValue(def.PackageName, out var pkg))
-                    {
-                        item.IsInstalled = true;
-                        item.FullName = pkg.Id.FullName;
-                        item.Version = pkg.Id.Version.ToString();
-                    }
-
-                    items.Add(item);
+                    items.Add(Helpers.OptionalAppResolver.Resolve(
+                        def,
+                        packages,
+                        osBuild,
+                        binary => System.IO.File.Exists(
+                            System.IO.Path.Combine(Environment.SystemDirectory, binary))));
                 }
                 return items;
             });
+        }
+
+        private static string SafeDisplayName(Windows.ApplicationModel.Package package)
+        {
+            try
+            {
+                return package.DisplayName;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>

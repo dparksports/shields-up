@@ -46,8 +46,11 @@ public sealed partial class BloatwarePage : Page
 
         if (!await Helpers.Dialogs.Confirm(
                 $"Remove {app.DisplayName}?\n\n{app.Note}\n\n" +
-                "This removes it for your account only. A feature update can bring it back, and you can " +
-                "reinstall it from the Microsoft Store at any time.",
+                $"Package: {app.FullName}\n\n" +
+                "This removes it for your account only. A feature update can bring it back.\n" +
+                (string.IsNullOrEmpty(app.ReinstallUrl)
+                    ? "You can reinstall it from the Microsoft Store at any time."
+                    : $"Reinstall it with Microsoft's installer:\n{app.ReinstallUrl}"),
                 $"Remove {app.DisplayName}"))
             return;
 

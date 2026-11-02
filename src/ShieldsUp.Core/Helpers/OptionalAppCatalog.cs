@@ -6,9 +6,10 @@ namespace ShieldsUp.Core.Helpers
     /// Snipping Tool…) — removal is offered one app at a time, on request.
     ///
     /// Package identities are the Appx names used by Get-AppxPackage /
-    /// PackageManager. They are stable across Windows 11 releases; matching is
-    /// by exact package name, never by display name, so a renamed app can never
-    /// cause the wrong package to be removed.
+    /// PackageManager. Matching is by exact package name first, then by the
+    /// documented aliases below, and only for entries that opt in, by the
+    /// package's own display name. A renamed package therefore fails closed as
+    /// "Not installed" instead of removing the wrong thing.
     /// </summary>
     public static class OptionalAppCatalog
     {
@@ -16,7 +17,12 @@ namespace ShieldsUp.Core.Helpers
             string DisplayName,
             string PackageName,
             string Note,
-            bool WindowsComponent = false);
+            bool WindowsComponent = false,
+            string[] Aliases = null,
+            string SystemBinary = null,
+            string SystemBinaryNote = null,
+            bool MatchByDisplayName = false,
+            string ReinstallUrl = null);
 
         public static readonly Definition[] Apps =
         {
@@ -34,11 +40,22 @@ namespace ShieldsUp.Core.Helpers
                 "Microsoft's video editor. Clips made with it stay in your Videos folder."),
             new("Snipping Tool", "Microsoft.ScreenSketch",
                 "Screenshot and screen-recording tool. Print Screen opens it by default."),
-            new("Remote Desktop Connection", "mstsc.exe",
-                "mstsc.exe ships inside Windows and is not a Store package, so it cannot be " +
-                "uninstalled. To stop other machines connecting to this one, turn off " +
-                "Remote Desktop in Settings → System → Remote Desktop.",
-                WindowsComponent: true),
+
+            // Since Windows 11 23H2 the classic RDP client ships as an app that
+            // Settings → Installed apps can uninstall; on older builds mstsc.exe
+            // is part of Windows and there is nothing to remove. Both states are
+            // reported honestly rather than offering a button that cannot work.
+            new("Remote Desktop Connection", "Microsoft.RemoteDesktopConnection",
+                "The classic RDP client. Uninstalling it also removes the RemoteApp and Desktop " +
+                "Connections control panel.",
+                Aliases: new[] { "Microsoft.Windows.RemoteDesktopConnection", "Microsoft.RDC" },
+                SystemBinary: "mstsc.exe",
+                SystemBinaryNote: "This build does not list Remote Desktop Connection as an app, so there " +
+                "is nothing to uninstall. Windows 11 23H2 and later offer it under Settings → Installed " +
+                "apps; on earlier builds mstsc.exe is part of Windows. To stop incoming connections " +
+                "instead, turn off Remote Desktop in Settings → System → Remote Desktop.",
+                MatchByDisplayName: true,
+                ReinstallUrl: "https://go.microsoft.com/fwlink/?linkid=2247659"),
         };
     }
 }

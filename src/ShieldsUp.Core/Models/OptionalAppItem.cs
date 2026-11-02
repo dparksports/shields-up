@@ -27,6 +27,9 @@ namespace ShieldsUp.Core.Models
         /// <summary>One line about what the app is / what removal costs.</summary>
         public string Note { get; set; }
 
+        /// <summary>Microsoft's reinstatement path, when removal is not a one-click Store reinstall.</summary>
+        public string ReinstallUrl { get; set; }
+
         public string Version { get; set; }
 
         /// <summary>Only an installed, resolvable Store package can be removed.</summary>
