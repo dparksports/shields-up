@@ -130,6 +130,16 @@ device drivers requires it. A version that didn't ask couldn't do what it promis
 3. Extract anywhere and run `ShieldsUp.exe`. Windows will ask for permission — see admin, above.
 4. Start with **Quick Scan**, and read before you click.
 
+**On a small display.** Windows itself often comes up at 800×600 right after a
+clean install — exactly when this app earns its keep — so it adapts instead of
+opening off-screen: the window is sized to the desktop (and opens maximized on a
+compact one), the navigation pane collapses to an icon rail, page toolbars wrap,
+and the densest tables drop their secondary columns until there is room again.
+**Ctrl+K** jumps to any page from the keyboard. The actions themselves are
+unchanged, and the full layout returns the next time it starts on a larger
+desktop. The download is self-contained as well: no .NET or Windows App SDK
+runtime to install first.
+
 **Uninstalling** = deleting the folder.
 
 ---

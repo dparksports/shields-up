@@ -19,11 +19,55 @@ public sealed partial class QuickScanPage : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        ShowSmallDisplayNotice();
         if (_items.Count == 0)
         {
             foreach (var step in QuickScanService.Steps)
                 _items.Add(new SetupStepItem(step));
             await VerifyAllAsync();
+        }
+    }
+
+    // ── Small-display notice ────────────────────────────────────────────────
+    // A fresh Windows install comes up at 800x600 (basic display adapter)
+    // until the GPU driver lands. The app adapts rather than refusing to run —
+    // but a user should not have to guess why the layout looks different.
+    private const string UiRegKey = @"Software\ShieldsUp\Ui";
+    private const string NoticeDismissedValue = "SmallDisplayNoticeDismissed";
+
+    private void ShowSmallDisplayNotice()
+    {
+        try
+        {
+            if (App.MainWnd is not { IsSmallDisplay: true } main) return;
+            using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(UiRegKey))
+            {
+                if (key?.GetValue(NoticeDismissedValue) is int dismissed && dismissed == 1) return;
+            }
+
+            SmallDisplayBar.Message =
+                $"This desktop is {main.WorkAreaText} DIPs, so the app opened maximized and adapts its " +
+                "layout — toolbars wrap and secondary table columns are hidden when space is tight. " +
+                "If Windows was just installed, the display driver may still be pending; Windows Update " +
+                "restores the full layout on the next launch.";
+            SmallDisplayBar.IsOpen = true;
+        }
+        catch
+        {
+            // Purely informational — never block the page.
+        }
+    }
+
+    private void SmallDisplayBar_Closed(InfoBar sender, InfoBarClosedEventArgs args)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(UiRegKey);
+            key.SetValue(NoticeDismissedValue, 1, Microsoft.Win32.RegistryValueKind.DWord);
+        }
+        catch
+        {
+            // Dismissal is best-effort.
         }
     }
 

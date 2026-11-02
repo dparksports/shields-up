@@ -10,7 +10,8 @@
         <converters:TaskStateToColorConverter x:Key="StateColor" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}"
+          SizeChanged="Page_SizeChanged">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />

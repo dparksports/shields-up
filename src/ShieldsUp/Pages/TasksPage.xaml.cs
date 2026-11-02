@@ -15,7 +15,17 @@ public sealed partial class TasksPage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await LoadTasks();
+        ApplyResponsiveColumns(ActualWidth);
     }
+
+    private void Page_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyResponsiveColumns(e.NewSize.Width);
+
+    /// <summary>Task name and state survive the narrow layout; path and user do not.</summary>
+    private void ApplyResponsiveColumns(double width) =>
+        Helpers.GridColumns.Apply(TasksGrid, width,
+            ("Path", 900),
+            ("User", 900),
+            ("Action", 760));
 
     private async void RefreshBtn_Click(object sender, RoutedEventArgs e) => await LoadTasks();
 

@@ -17,7 +17,32 @@ public sealed partial class BloatwarePage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await RefreshAppsList();
+        ApplyResponsiveColumns(ActualWidth);
+        ApplyResponsiveHeader(ActualWidth);
     }
+
+    private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        ApplyResponsiveColumns(e.NewSize.Width);
+        ApplyResponsiveHeader(e.NewSize.Width);
+    }
+
+    /// <summary>Actions sit beside the title when there is room, under it when not.</summary>
+    private void ApplyResponsiveHeader(double width)
+    {
+        bool stacked = width < 780;
+        Grid.SetRow(HeaderActions, stacked ? 1 : 0);
+        Grid.SetColumn(HeaderActions, stacked ? 0 : 1);
+        Grid.SetColumnSpan(HeaderActions, stacked ? 2 : 1);
+        HeaderActions.HorizontalAlignment = stacked ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+    }
+
+    /// <summary>At 800x600 the star columns carry the app identity; the publisher blurb goes first.</summary>
+    private void ApplyResponsiveColumns(double width) =>
+        Helpers.GridColumns.Apply(AppsDataGrid, width,
+            ("Signer / Publisher", 900),
+            ("Version", 780),
+            ("Signature Status", 700));
 
     private async void RefreshBtn_Click(object sender, RoutedEventArgs e)
     {

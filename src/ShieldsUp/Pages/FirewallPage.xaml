@@ -11,28 +11,42 @@
         <converters:ActionToColorConverter x:Key="ActionToColor" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}"
+          SizeChanged="Page_SizeChanged">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,12" ColumnSpacing="8">
+        <!-- Header: title/subtitle, with the profile actions dropping under it
+             when the window is narrow. At 800x600 the window is 800 DIPs wide,
+             the pane is a 48 DIP rail, and the page has ~704 DIPs of content —
+             the old single row (title + combo + two buttons) needed ~900. -->
+        <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="0,0,0,12" ColumnSpacing="12" RowSpacing="6">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Advanced Firewall Settings" Style="{StaticResource PageHeaderText}" />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Wide/narrow header switching is driven from code-behind
+                 (ApplyResponsiveHeader): what matters is the page's width, not
+                 the window's, once the navigation pane becomes a rail. -->
+
+            <StackPanel Grid.Row="0" Grid.Column="0">
+                <TextBlock Text="Advanced Firewall Settings" Style="{StaticResource PageHeaderText}" TextWrapping="Wrap" />
                 <TextBlock Text="Manage Windows Defender Firewall profiles and port rules via native COM APIs."
                            Style="{StaticResource SubtleText}" />
             </StackPanel>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <TextBlock Text="Quick Profile:" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <StackPanel x:Name="HeaderActions" Grid.Row="0" Grid.Column="1"
+                        Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="Profile:" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <ComboBox x:Name="ProfileCombo" Width="150" SelectionChanged="ProfileCombo_SelectionChanged">
                     <ComboBoxItem Content="Custom (Current)" IsSelected="True" />
                     <ComboBoxItem Content="Shield Up" />
@@ -46,19 +60,22 @@
                         Style="{StaticResource DangerButton}" Click="RestoreInternetBtn_Click"
                         ToolTipService.ToolTip="Panic button: disables every Shields Up / AutoCommand block rule (AC-BLOCK fleet) at once." />
             </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+                <ProgressBar x:Name="ProfileProgress" Width="120" Height="14" IsIndeterminate="True"
+                             Visibility="Collapsed" VerticalAlignment="Center" />
+                <TextBlock x:Name="ProfileStatusText" Text="" Style="{StaticResource SubtleText}" FontStyle="Italic"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+            </StackPanel>
         </Grid>
 
         <!-- View Filter -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,12">
             <RadioButton x:Name="InboundRadio" Content="Inbound Rules" IsChecked="True" Checked="FilterChanged" />
             <RadioButton x:Name="OutboundRadio" Content="Outbound Rules" Checked="FilterChanged" />
             <TextBlock x:Name="RuleCountText" Text="" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
-            <Button x:Name="RenameLegacyBtn" Content="✏️ Rename legacy blocks" Click="RenameLegacyBtn_Click" IsEnabled="False"
+            <Button x:Name="RenameLegacyBtn" Content="✏️ Rename legacy" Click="RenameLegacyBtn_Click" IsEnabled="False"
                     ToolTipService.ToolTip="Recreate AutoCommand block rules still using the legacy 'AutoCommand IP Block / Process Block' names under the current AC-BLOCK naming. Lossless: descriptions carry over, redundant inbound duplicates are removed, protection unchanged." />
-            <ProgressBar x:Name="ProfileProgress" Width="120" Height="14" IsIndeterminate="True"
-                         Visibility="Collapsed" VerticalAlignment="Center" />
-            <TextBlock x:Name="ProfileStatusText" Text="" Style="{StaticResource SubtleText}" FontStyle="Italic"
-                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="380" />
         </StackPanel>
 
         <!-- Rules Grid -->
@@ -66,7 +83,7 @@
         <controls:DataGrid Grid.Row="2" x:Name="RulesGrid" AutoGenerateColumns="False" IsReadOnly="True"
                            SelectionMode="Single" Foreground="#1D1D1F" Sorting="RulesGrid_Sorting">
             <controls:DataGrid.Columns>
-                <controls:DataGridTemplateColumn Header="Enabled" Width="80">
+                <controls:DataGridTemplateColumn Header="Enabled" Width="92">
                     <controls:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding EnabledDisplay}" FontWeight="SemiBold"
@@ -75,7 +92,7 @@
                         </DataTemplate>
                     </controls:DataGridTemplateColumn.CellTemplate>
                 </controls:DataGridTemplateColumn>
-                <controls:DataGridTemplateColumn Header="Action" Width="70">
+                <controls:DataGridTemplateColumn Header="Action" Width="84">
                     <controls:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Action}"
@@ -86,9 +103,9 @@
                 </controls:DataGridTemplateColumn>
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*" />
                 <controls:DataGridTextColumn Header="Group" Binding="{Binding DisplayGroup}" Width="170" />
-                <controls:DataGridTextColumn Header="Protocol" Binding="{Binding Protocol}" Width="80" />
-                <controls:DataGridTextColumn Header="Local Port" Binding="{Binding LocalPort}" Width="80" />
-                <controls:DataGridTextColumn Header="Remote Address" Binding="{Binding RemoteAddress}" Width="130" />
+                <controls:DataGridTextColumn Header="Protocol" Binding="{Binding Protocol}" Width="90" />
+                <controls:DataGridTextColumn Header="Local Port" Binding="{Binding LocalPort}" Width="96" />
+                <controls:DataGridTextColumn Header="Remote Address" Binding="{Binding RemoteAddress}" Width="146" />
                 <controls:DataGridTextColumn Header="Profile" Binding="{Binding Profile}" Width="110" />
             </controls:DataGrid.Columns>
             <controls:DataGrid.ContextFlyout>

@@ -12,7 +12,8 @@
         <conv:SignatureStatusConverter x:Key="SignatureStatusConverter" />
     </Page.Resources>
 
-    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}">
+    <Grid Padding="24,16,24,24" Background="{StaticResource PageBackgroundBrush}"
+          SizeChanged="Page_SizeChanged">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -20,22 +21,40 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,12">
-            <StackPanel Spacing="6">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <TextBlock Text="Bloatware" Style="{StaticResource PageHeaderText}" VerticalAlignment="Center" />
-                    <Button Content="↻ Refresh List" Style="{StaticResource PrimaryButton}" Click="RefreshBtn_Click" />
-                    <Button x:Name="RemoveBloatwareBtn" Content="🧹 Remove Bloatware"
-                            Style="{StaticResource DangerButton}" Click="RemoveBloatwareBtn_Click"
-                            ToolTipService.ToolTip="Uninstall Outlook, Xbox, Phone Link, Teams, Copilot, OneDrive and other preinstalled apps after confirmation." />
-                    <Button x:Name="ManageBloatwareBtn" Content="⚙ Manage List"
-                            Style="{StaticResource PrimaryButton}" Click="ManageBloatwareBtn_Click"
-                            ToolTipService.ToolTip="Customize which apps count as bloatware: enable/disable defaults, add your own." />
-                </StackPanel>
-                <TextBlock Text="The Store-packaged apps Windows Settings shows under Apps → Installed apps — apps you can uninstall (Outlook, Teams, Copilot, …). Win32 desktop apps such as OneDrive are only targeted by Remove Bloatware."
-                           Style="{StaticResource SubtleText}" />
+        <!-- Header: the three actions drop under the title when the window is
+             narrow (at 800x600 the content area is ~704 DIPs and the inline
+             title + buttons need ~730). -->
+        <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="0,0,0,12" ColumnSpacing="12" RowSpacing="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Wide/narrow header switching is driven from code-behind
+                 (ApplyResponsiveHeader); see FirewallPage for the rationale. -->
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Bloatware" Style="{StaticResource PageHeaderText}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" />
+
+            <StackPanel x:Name="HeaderActions" Grid.Row="0" Grid.Column="1"
+                        Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <Button Content="↻ Refresh List" Style="{StaticResource PrimaryButton}" Click="RefreshBtn_Click" />
+                <Button x:Name="RemoveBloatwareBtn" Content="🧹 Remove Bloatware"
+                        Style="{StaticResource DangerButton}" Click="RemoveBloatwareBtn_Click"
+                        ToolTipService.ToolTip="Uninstall Outlook, Xbox, Phone Link, Teams, Copilot, OneDrive and other preinstalled apps after confirmation." />
+                <Button x:Name="ManageBloatwareBtn" Content="⚙ Manage List"
+                        Style="{StaticResource PrimaryButton}" Click="ManageBloatwareBtn_Click"
+                        ToolTipService.ToolTip="Customize which apps count as bloatware: enable/disable defaults, add your own." />
             </StackPanel>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="The Store-packaged apps Windows Settings shows under Apps → Installed apps — apps you can uninstall (Outlook, Teams, Copilot, …). Win32 desktop apps such as OneDrive are only targeted by Remove Bloatware."
+                       Style="{StaticResource SubtleText}" />
         </Grid>
 
         <!-- View Filter -->

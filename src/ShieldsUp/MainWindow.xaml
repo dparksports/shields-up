@@ -15,6 +15,12 @@
          content — and the white Background leaves no pixel for the
          theme-dependent window backdrop to bleed through. -->
     <Grid RequestedTheme="Light" Background="#FFFFFF">
+        <Grid.KeyboardAccelerators>
+            <!-- Page switcher: with the navigation pane collapsed to a 48px
+                 icon rail on small displays, every page stays reachable from
+                 the keyboard. -->
+            <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="QuickSwitch_Invoked" />
+        </Grid.KeyboardAccelerators>
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
             <RowDefinition Height="*" />
@@ -39,7 +45,9 @@
             IsTitleBarAutoPaddingEnabled="False"
             RequestedTheme="Light"
             SelectionChanged="Nav_SelectionChanged"
-            OpenPaneLength="220">
+            OpenPaneLength="220"
+            CompactModeThresholdWidth="640"
+            ExpandedModeThresholdWidth="1200">
 
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Quick Scan" Tag="QuickScan">

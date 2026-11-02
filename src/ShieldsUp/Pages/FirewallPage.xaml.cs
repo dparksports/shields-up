@@ -86,7 +86,43 @@ public sealed partial class FirewallPage : Page
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         await LoadRules();
+        ApplyResponsiveColumns(ActualWidth);
+        ApplyResponsiveHeader(ActualWidth);
     }
+
+    private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        ApplyResponsiveColumns(e.NewSize.Width);
+        ApplyResponsiveHeader(e.NewSize.Width);
+    }
+
+    /// <summary>
+    /// Title + profile actions side by side when there is room; actions drop
+    /// under the title when there is not. Driven from here rather than a
+    /// VisualStateTrigger because the width that matters is the page's, not
+    /// the window's, once the navigation pane has collapsed to its rail.
+    /// </summary>
+    private void ApplyResponsiveHeader(double width)
+    {
+        bool stacked = width < 900;
+        Grid.SetRow(HeaderActions, stacked ? 1 : 0);
+        Grid.SetColumn(HeaderActions, stacked ? 0 : 1);
+        Grid.SetColumnSpan(HeaderActions, stacked ? 2 : 1);
+        HeaderActions.HorizontalAlignment = stacked ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+    }
+
+    /// <summary>
+    /// Drops the secondary firewall columns rather than squeezing them: at
+    /// 800x600 the page is ~704 DIPs wide, less than the fixed column set.
+    /// Name / Enabled / Action always stay.
+    /// </summary>
+    private void ApplyResponsiveColumns(double width) =>
+        Helpers.GridColumns.Apply(RulesGrid, width,
+            ("Group", 900),
+            ("Protocol", 780),
+            ("Local Port", 780),
+            ("Remote Address", 900),
+            ("Profile", 900));
 
     private async void RefreshBtn_Click(object sender, RoutedEventArgs e)
     {
