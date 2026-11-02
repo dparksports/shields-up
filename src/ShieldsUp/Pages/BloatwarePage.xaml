@@ -93,8 +93,8 @@
                                     </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource SubtleText}"
                                                VerticalAlignment="Center" />
-                                    <Button Grid.Column="2" Content="Remove" Click="RemoveOptionalApp_Click"
-                                            Visibility="{Binding CanRemove, Converter={StaticResource TrueToVisible}}"
+                                    <Button Grid.Column="2" Content="{Binding ActionLabel}" Click="RemoveOptionalApp_Click"
+                                            Visibility="{Binding CanAct, Converter={StaticResource TrueToVisible}}"
                                             VerticalAlignment="Center"
                                             Style="{StaticResource DangerButton}" Padding="12,6" FontSize="12" />
                                 </Grid>

@@ -21,6 +21,7 @@ namespace ShieldsUp.Core.Helpers
             string[] Aliases = null,
             string SystemBinary = null,
             string SystemBinaryNote = null,
+            string SystemBinaryUninstallArgs = null,
             bool MatchByDisplayName = false,
             string ReinstallUrl = null);
 
@@ -41,19 +42,21 @@ namespace ShieldsUp.Core.Helpers
             new("Snipping Tool", "Microsoft.ScreenSketch",
                 "Screenshot and screen-recording tool. Print Screen opens it by default."),
 
-            // Since Windows 11 23H2 the classic RDP client ships as an app that
-            // Settings → Installed apps can uninstall; on older builds mstsc.exe
-            // is part of Windows and there is nothing to remove. Both states are
-            // reported honestly rather than offering a button that cannot work.
+            // Windows 11 ships the classic RDP client as a servicing "optional
+            // component" (mstsc.exe + Microsoft-Windows-TS-OptionalComponents-
+            // Package), not as a Store package, so PackageManager cannot remove
+            // it. The client carries its own first-party uninstaller —
+            // "mstsc.exe /uninstall /noPromptBeforeRestart" — which is what the
+            // row now runs; Settings drives the same component removal.
             new("Remote Desktop Connection", "Microsoft.RemoteDesktopConnection",
                 "The classic RDP client. Uninstalling it also removes the RemoteApp and Desktop " +
                 "Connections control panel.",
                 Aliases: new[] { "Microsoft.Windows.RemoteDesktopConnection", "Microsoft.RDC" },
                 SystemBinary: "mstsc.exe",
-                SystemBinaryNote: "This build does not list Remote Desktop Connection as an app, so there " +
-                "is nothing to uninstall. Windows 11 23H2 and later offer it under Settings → Installed " +
-                "apps; on earlier builds mstsc.exe is part of Windows. To stop incoming connections " +
-                "instead, turn off Remote Desktop in Settings → System → Remote Desktop.",
+                SystemBinaryNote: "Windows installs this as an optional component, and it carries its own " +
+                "uninstaller — the row runs mstsc.exe /uninstall /noPromptBeforeRestart. The removal can " +
+                "need a restart to finish; Microsoft's installer puts it back.",
+                SystemBinaryUninstallArgs: "/uninstall /noPromptBeforeRestart",
                 MatchByDisplayName: true,
                 ReinstallUrl: "https://go.microsoft.com/fwlink/?linkid=2247659"),
         };

@@ -227,14 +227,12 @@ namespace ShieldsUp.Core.Services
                     System.Diagnostics.Debug.WriteLine($"AppManagerService optional apps error: {ex.Message}");
                 }
 
-                int osBuild = Environment.OSVersion.Version.Build;
                 var items = new List<OptionalAppItem>();
                 foreach (var def in Helpers.OptionalAppCatalog.Apps)
                 {
                     items.Add(Helpers.OptionalAppResolver.Resolve(
                         def,
                         packages,
-                        osBuild,
                         binary => System.IO.File.Exists(
                             System.IO.Path.Combine(Environment.SystemDirectory, binary))));
                 }
@@ -560,6 +558,40 @@ namespace ShieldsUp.Core.Services
                 await Task.Delay(500);
             }
             return !System.IO.File.Exists(oneDriveExe);
+        }
+
+        /// <summary>
+        /// Runs an OS component's own uninstaller (Remote Desktop Connection:
+        /// mstsc.exe /uninstall /noPromptBeforeRestart). This is Microsoft's
+        /// first-party removal path for the servicing optional component —
+        /// PackageManager cannot see it. The removal can need a restart to
+        /// finish, which is why the caller reports that rather than assuming the
+        /// binary is gone immediately.
+        /// </summary>
+        public Task<(bool Ok, string Details)> UninstallSystemBinaryAsync(string binaryPath, string arguments)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(binaryPath) || !System.IO.File.Exists(binaryPath))
+                        return (false, $"{binaryPath} was not found.");
+
+                    var (output, error, exitCode) = Helpers.ProcessRunner.RunWithDetails(binaryPath, arguments);
+                    string details = string.Join("\n", new[] { output, error }
+                        .Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
+
+                    AppLogger.Log("AppManager",
+                        $"uninstall {System.IO.Path.GetFileName(binaryPath)} {arguments} -> exit {exitCode}" +
+                        (details.Length > 0 ? $" :: {details}" : ""));
+                    return (exitCode == 0, details);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogException($"uninstall {binaryPath}", ex);
+                    return (false, ex.Message);
+                }
+            });
         }
 
         public async Task<bool> UninstallAppAsync(string fullName)

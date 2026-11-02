@@ -18,11 +18,34 @@ namespace ShieldsUp.Core.Models
         public bool IsInstalled { get; set; }
 
         /// <summary>
-        /// True for entries that are not Store packages at all (mstsc.exe ships
-        /// inside Windows) — listed so users see the honest answer instead of
-        /// hunting for a remove button that cannot exist.
+        /// True for entries Windows ships as OS components rather than Store
+        /// packages. Remote Desktop Connection is one: since Windows 11 24H2 it
+        /// is a servicing "optional component" (mstsc.exe + the
+        /// Microsoft-Windows-TS-OptionalComponents-Package manifest), which
+        /// Settings → Installed apps can uninstall but which has no package
+        /// Shields Up can remove through PackageManager.
         /// </summary>
         public bool IsWindowsComponent { get; set; }
+
+        /// <summary>
+        /// True when Windows itself offers a working uninstall surface for the
+        /// entry (Settings → Installed apps). Used as a fallback when the
+        /// component's own uninstaller fails.
+        /// </summary>
+        public bool CanOpenSettings { get; set; }
+
+        /// <summary>
+        /// True when the entry is an OS component with its own first-party
+        /// uninstaller (Remote Desktop Connection: mstsc.exe /uninstall) rather
+        /// than a package PackageManager can remove.
+        /// </summary>
+        public bool RemoveViaSystemCommand { get; set; }
+
+        /// <summary>Full path to the OS component's executable (Windows component entries only).</summary>
+        public string SystemBinaryPath { get; set; }
+
+        /// <summary>Arguments that invoke its own uninstaller, e.g. /uninstall.</summary>
+        public string SystemBinaryArgs { get; set; }
 
         /// <summary>One line about what the app is / what removal costs.</summary>
         public string Note { get; set; }
@@ -32,8 +55,14 @@ namespace ShieldsUp.Core.Models
 
         public string Version { get; set; }
 
-        /// <summary>Only an installed, resolvable Store package can be removed.</summary>
-        public bool CanRemove => IsInstalled && !IsWindowsComponent && !string.IsNullOrEmpty(FullName);
+        /// <summary>A Store package we can remove, or an OS component with its own uninstaller.</summary>
+        public bool CanRemove => IsInstalled &&
+            (RemoveViaSystemCommand || (!IsWindowsComponent && !string.IsNullOrEmpty(FullName)));
+
+        /// <summary>Something the row can actually do.</summary>
+        public bool CanAct => CanRemove || CanOpenSettings;
+
+        public string ActionLabel => CanRemove ? "Remove" : CanOpenSettings ? "Open Settings" : "";
 
         public string StatusText =>
             IsWindowsComponent ? "Windows component"

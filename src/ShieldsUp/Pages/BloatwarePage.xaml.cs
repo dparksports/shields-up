@@ -41,8 +41,52 @@ public sealed partial class BloatwarePage : Page
 
     private async void RemoveOptionalApp_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.DataContext is not OptionalAppItem app || !app.CanRemove)
+        if (sender is not Button btn || btn.DataContext is not OptionalAppItem app)
             return;
+
+        // Remote Desktop Connection is an OS component, but it carries its own
+        // first-party uninstaller (mstsc.exe /uninstall /noPromptBeforeRestart).
+        if (app.RemoveViaSystemCommand)
+        {
+            if (!await Helpers.Dialogs.Confirm(
+                    $"Remove {app.DisplayName}?\n\n{app.Note}\n\n" +
+                    "This runs Windows' own uninstaller for the built-in client. It can need a restart to " +
+                    "finish, and it also removes the RemoteApp and Desktop Connections control panel.\n" +
+                    (string.IsNullOrEmpty(app.ReinstallUrl)
+                        ? ""
+                        : $"Reinstall it with Microsoft's installer:\n{app.ReinstallUrl}"),
+                    $"Remove {app.DisplayName}"))
+                return;
+
+            btn.IsEnabled = false;
+            var (ok, details) = await _appService.UninstallSystemBinaryAsync(app.SystemBinaryPath, app.SystemBinaryArgs);
+            if (ok)
+                await Helpers.Dialogs.Inform(
+                    $"{app.DisplayName} was uninstalled. Restart Windows if it still appears — the removal " +
+                    "finishes at restart.",
+                    "Removed");
+            else
+                await Helpers.Dialogs.Error(
+                    "Windows' uninstaller did not complete.\n\n" + details +
+                    "\n\nYou can also remove it from Settings → Apps → Installed apps.",
+                    "Not removed");
+
+            await RefreshAppsList();
+            await LoadOptionalAppsAsync();
+            return;
+        }
+
+        // Anything else without a package: Windows uninstalls it from Settings.
+        if (!app.CanRemove)
+        {
+            if (!app.CanOpenSettings) return;
+            if (await OpenInstalledAppsAsync()) return;
+
+            await Helpers.Dialogs.Error(
+                "Windows did not open Settings. Open Settings → Apps → Installed apps and remove it there.",
+                "Open Settings");
+            return;
+        }
 
         if (!await Helpers.Dialogs.Confirm(
                 $"Remove {app.DisplayName}?\n\n{app.Note}\n\n" +
@@ -84,6 +128,39 @@ public sealed partial class BloatwarePage : Page
         Grid.SetColumn(HeaderActions, stacked ? 0 : 1);
         Grid.SetColumnSpan(HeaderActions, stacked ? 2 : 1);
         HeaderActions.HorizontalAlignment = stacked ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+    }
+
+    /// <summary>
+    /// Opens Settings → Apps → Installed apps, where Windows exposes the
+    /// uninstall for servicing optional components such as Remote Desktop
+    /// Connection. Tries URI activation first; if the elevated process is
+    /// refused, asks the shell to do it (explorer runs as the signed-in user).
+    /// </summary>
+    private async Task<bool> OpenInstalledAppsAsync()
+    {
+        const string uri = "ms-settings:appsfeatures";
+        try
+        {
+            if (await Windows.System.Launcher.LaunchUriAsync(new Uri(uri))) return true;
+        }
+        catch (Exception ex)
+        {
+            Core.Services.AppLogger.LogException("open installed apps (launcher)", ex);
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", uri)
+            {
+                UseShellExecute = true,
+            });
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Core.Services.AppLogger.LogException("open installed apps (explorer)", ex);
+        }
+        return false;
     }
 
     /// <summary>At 800x600 the star columns carry the app identity; the publisher blurb goes first.</summary>
