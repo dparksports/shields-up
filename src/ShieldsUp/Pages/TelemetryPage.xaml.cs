@@ -62,12 +62,14 @@ public sealed partial class TelemetryPage : Page
                 });
             }
             var detected = statuses.Where(s => s.Detected).ToList();
-            var on = detected.Where(s => s.State == TelemetryState.On).ToList();
+            var telemetryOn = detected.Where(s => s.State == TelemetryState.On && !s.Rule.IsFeatureToggle).ToList();
+            var featureOn = detected.Where(s => s.State == TelemetryState.On && s.Rule.IsFeatureToggle).ToList();
             var ineffective = detected.Where(s => s.State == TelemetryState.Ineffective).ToList();
             var blocked = detected.Where(s => s.Enforced).ToList();
             StatusText.Text = detected.Count == 0
                 ? "None of the known-telemetry apps are installed on this machine."
-                : $"{detected.Count} detected — {on.Count} still sending usage data"
+                : $"{detected.Count} detected — {telemetryOn.Count} sending usage data"
+                  + (featureOn.Count > 0 ? $", {featureOn.Count} cloud-fetching feature(s) on" : "")
                   + (ineffective.Count > 0 ? $", {ineffective.Count} opt-out(s) present but not honored — re-apply to fix" : "")
                   + (blocked.Count > 0 ? $", {blocked.Count} network-blocked" : "")
                   + ".";
@@ -122,10 +124,15 @@ public sealed partial class TelemetryPage : Page
         if (RulesGrid.SelectedItem is not TelemetryRow row || row.Status?.Rule == null) return;
         var rule = row.Status.Rule;
 
+        string promptLead = rule.IsFeatureToggle
+            ? $"Turn off this network-fetching feature ({rule.AppName})?"
+            : $"Turn off telemetry for {rule.AppName}?";
+        string dialogTitle = rule.IsFeatureToggle ? "Turn off feature" : "Opt out";
+
         if (!await Helpers.Dialogs.Confirm(
-                $"Turn off telemetry for {rule.AppName}?\n\n{rule.Mechanism}\n\n" +
+                $"{promptLead}\n\n{rule.Mechanism}\n\n" +
                 $"Risk: {rule.RiskNote}\nThe current setting is saved first and can be reverted.",
-                "Opt out"))
+                dialogTitle))
             return;
 
         OptOutBtn.IsEnabled = false;

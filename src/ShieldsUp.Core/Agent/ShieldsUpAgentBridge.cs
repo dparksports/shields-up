@@ -1,34 +1,30 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceProcess;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AutoCommand.Engines.Bridge;
 using AutoCommand.Engines.Core;
+using ShieldsUp.Core.Helpers;
+using ShieldsUp.Core.Services;
 
 namespace ShieldsUp.Core.Agent
 {
     /// <summary>
     /// Shields Up's AI-access session over the shared AutoCommand III bridge
-    /// engine (Engines.Bridge): the same loopback-only, bearer-token,
-    /// POST-only JSON-RPC endpoint AutoCommand hosts, under Shields Up's own
-    /// identity (own data root, own port scan range 47861+, own MCP id).
+    /// engine (Engines.Bridge): loopback-only, bearer-token, POST-only JSON-RPC
+    /// endpoint under Shields Up's own identity (own data root, own port scan
+    /// range 47861+, own MCP id).
     ///
-    /// This first surface is deliberately READ-ONLY: two firewall-state
-    /// tools, no mutating tools at all. The engine's session model already
-    /// encodes that stance (Start(allowMutating: false)) — a mutating
-    /// surface would need the per-call confirmation dialog seam first, the
-    /// same way AutoCommand's Be My Guest tab does it.
-    ///
-    /// session.json lands in %LOCALAPPDATA%\ShieldsUp\agent\ — clients read
-    /// {port, token, pid} from it, never a hardcoded port.
+    /// Strictly READ-ONLY: firewall summary/listings, full attack-surface &amp;
+    /// name-resolution posture, and startup/task inventory. Zero mutating tools.
     /// </summary>
     public static class ShieldsUpAgentBridge
     {
-        /// <summary>Shields Up's engine identity: same AC-BLOCK rule family
-        /// as AutoCommand (this app manages those rules too), own session
-        /// data root, own bridge port range so both apps can host a session
-        /// side by side.</summary>
+        private static readonly string[] VpnServices = { "RasMan", "IKEEXT", "PolicyAgent", "RemoteAccess" };
+        private const string UsageDataTaskPath = @"\Microsoft\Windows\Flighting\FeatureConfig\UsageDataReceiver";
+
         private static AppIdentity Identity() => new(
             "Shields Up",
             AppPaths.DataRoot,
@@ -38,8 +34,6 @@ namespace ShieldsUp.Core.Agent
             47861,
             "shieldsup");
 
-        /// <summary>Call once at app startup, before any session can start:
-        /// installs the engine + this app's tool surface.</summary>
         public static void Wire() =>
             AutoCommand.Engines.Bridge.AgentBridgeService.Shared =
                 new AutoCommand.Engines.Bridge.AgentBridgeService(Identity(), new SuAgentTools());
@@ -47,11 +41,8 @@ namespace ShieldsUp.Core.Agent
         public static AutoCommand.Engines.Bridge.AgentBridgeService Instance =>
             AutoCommand.Engines.Bridge.AgentBridgeService.Shared;
 
-        /// <summary>Starts a READ-ONLY session (the only kind this surface
-        /// offers). Returns (ok, message) for the UI to show.</summary>
         public static (bool Ok, string Message) Start()
         {
-            // F# engine tuples surface as System.Tuple — unpack for callers
             var t = Instance.Start(allowMutating: false);
             return (t.Item1, t.Item2);
         }
@@ -61,32 +52,47 @@ namespace ShieldsUp.Core.Agent
         public static List<string> RecentActivity(int count = 30) =>
             Instance.RecentActivity(count).ToList();
 
-        // ── the tool surface ───────────────────────────────────────────────
+        // ── the tool surface (read-only) ───────────────────────────────────
 
         private sealed class SuAgentTools : IAgentTools
         {
             public IList<string> Names(bool allowMutating) =>
-                new List<string> { "get_firewall_summary", "list_firewall_rules" };
+                new List<string>
+                {
+                    "get_firewall_summary",
+                    "list_firewall_rules",
+                    "get_shieldsup_status",
+                    "get_startup_status"
+                };
 
             public string ListTools(bool allowMutating) =>
                 new JsonArray(
                     ToolDescriptor("get_firewall_summary",
                         "Windows Firewall rule counts by direction (total/enabled, inbound and outbound) " +
-                        "plus how many legacy-named AutoCommand-family block rules exist. The fast " +
-                        "orientation call before list_firewall_rules."),
+                        "plus how many legacy-named AutoCommand-family block rules exist. Read-only."),
                     ToolDescriptor("list_firewall_rules",
                         "Firewall rules as Shields Up's Firewall page shows them: display name, group, " +
                         "enabled, action, protocol, program, remote address. Args: direction 'in'|'out' " +
                         "(default out), contains (case-insensitive filter over name/group/program), " +
-                        "max rows (default 100, cap 500). Read-only."))
+                        "max rows (default 100, cap 500). Read-only."),
+                    ToolDescriptor("get_shieldsup_status",
+                        "Live attack-surface, legacy name-resolution, and OS hardening posture: SSTP & VPN " +
+                        "miniports, Wi-Fi Direct hosted network, KDNET/kernel debug, VPN services, " +
+                        "UsageDataReceiver task, LLMNR, NetBIOS over TCP/IP, mDNS, Hotpatch Monitoring, " +
+                        "IPv6, UAC strictness, and LSA PPL. Read-only."),
+                    ToolDescriptor("get_startup_status",
+                        "Persistent logon items (Run keys, Startup folders, plus snapshotted-disabled " +
+                        "entries) and scheduled tasks classified into Third-party vs Windows inbox. Read-only."))
                 .ToJsonString();
 
             public IAgentTool Find(string name, bool allowMutating) =>
                 name == "get_firewall_summary" ? new SuTool(name, _ => Summary())
                 : name == "list_firewall_rules" ? new SuTool(name, Rules)
+                : name == "get_shieldsup_status" ? new SuTool(name, _ => ShieldsUpStatus())
+                : name == "get_startup_status" ? new SuTool(name, _ => StartupStatus())
                 : null;
 
-            public string BuildMonitorSnapshot() => null; // no periodic feed on this surface yet
+            public string BuildMonitorSnapshot() => null;
 
             private static JsonObject ToolDescriptor(string name, string description) => new()
             {
@@ -107,7 +113,7 @@ namespace ShieldsUp.Core.Agent
             public SuTool(string name, Func<string, string> invoke) { _name = name; _invoke = invoke; }
             public string Name => _name;
             public bool Mutating => false;
-            public string ConfirmDetail(string argsJson) => null; // read-only: nothing to confirm
+            public string ConfirmDetail(string argsJson) => null;
             public string Invoke(string argsJson) => _invoke(argsJson);
         }
 
@@ -126,8 +132,7 @@ namespace ShieldsUp.Core.Agent
                 ["outbound_total"] = t.Item3,
                 ["outbound_enabled"] = t.Item4,
                 ["legacy_block_rules"] = legacy,
-                ["note"] = "Read-only view from Shields Up. list_firewall_rules shows individual rules; " +
-                           "changes to rules happen in the app, never from the assistant.",
+                ["note"] = "Read-only view from Shields Up. Changes happen in the app, never from the assistant.",
             });
         }
 
@@ -177,6 +182,105 @@ namespace ShieldsUp.Core.Agent
                 ["rows"] = arr,
                 ["row_count"] = arr.Count,
                 ["total_matching"] = rules.Count,
+            });
+        }
+
+        private static string ShieldsUpStatus()
+        {
+            var sstp = AttackSurfaceService.GetSstpStatus();
+            string hosted = AttackSurfaceService.GetHostedNetworkStatus();
+            bool debugOn = AttackSurfaceService.IsKernelDebugOn();
+            var hotpatch = AttackSurfaceService.GetHotpatchStatus();
+            var llmnr = NameResolutionDoors.GetLlmnrStatus();
+            var nb = NameResolutionDoors.GetNetbiosStatus();
+            var mdns = NameResolutionDoors.GetMdnsStatus();
+
+            int vpnRunning = 0;
+            foreach (var svc in VpnServices)
+            {
+                try
+                {
+                    using var sc = new ServiceController(svc);
+                    if (sc.Status == ServiceControllerStatus.Running) vpnRunning++;
+                }
+                catch { }
+            }
+
+            bool usageTaskOn = TaskSchedulerService.Instance.IsTaskEnabled(UsageDataTaskPath);
+
+            var doors = new JsonObject
+            {
+                ["sstp"] = new JsonObject { ["open"] = sstp.Active, ["status"] = sstp.StatusText, ["start_mode"] = sstp.StartMode },
+                ["hosted_network"] = new JsonObject { ["open"] = hosted == "Started", ["status"] = hosted },
+                ["kernel_debug"] = new JsonObject { ["open"] = debugOn },
+                ["vpn_services"] = new JsonObject { ["open"] = vpnRunning > 0, ["running_count"] = vpnRunning },
+                ["usage_data_task"] = new JsonObject { ["open"] = usageTaskOn },
+                ["llmnr"] = new JsonObject { ["open"] = llmnr.Open, ["evidence"] = llmnr.Evidence },
+                ["netbios"] = new JsonObject { ["open"] = nb.State != NameResolutionDoors.NbState.Closed && nb.Total > 0, ["state"] = nb.State.ToString(), ["disabled"] = nb.Disabled, ["total"] = nb.Total, ["evidence"] = nb.Evidence },
+                ["mdns"] = new JsonObject { ["open"] = mdns.Open, ["evidence"] = mdns.Evidence },
+                ["hotpatch_monitoring"] = new JsonObject { ["open"] = hotpatch.Present && hotpatch.Enabled, ["present"] = hotpatch.Present, ["enabled"] = hotpatch.Enabled },
+            };
+
+            return ToJson(new JsonObject
+            {
+                ["type"] = "shieldsup_status",
+                ["doors"] = doors,
+                ["hardening"] = new JsonObject
+                {
+                    ["ipv6_disabled"] = RegistryHelper.GetIpv6DisabledStatus(),
+                    ["uac_max_strictness"] = RegistryHelper.GetUacStrictness(),
+                    ["lsa_ppl_enabled"] = RegistryHelper.GetLsaProtectionStatus(),
+                },
+                ["miniport_count"] = AttackSurfaceService.ListWanMiniports().Count,
+                ["wifi_direct_count"] = AttackSurfaceService.ListWifiDirectAdapters().Count,
+                ["kdnet_count"] = AttackSurfaceService.ListKdnetAdapters().Count,
+            });
+        }
+
+        private static string StartupStatus()
+        {
+            var logonActive = RegistryHelper.GetStartupItems();
+            var logonDisabled = StartupSurfaceService.GetDisabledSnapshots();
+            var allTasks = TaskSchedulerService.Instance.LoadTasksAsync().GetAwaiter().GetResult();
+
+            var logonArr = new JsonArray();
+            foreach (var item in logonActive.Concat(logonDisabled))
+            {
+                logonArr.Add(new JsonObject
+                {
+                    ["name"] = item.Name,
+                    ["location"] = item.Location,
+                    ["command"] = item.Value,
+                    ["state"] = item.State,
+                });
+            }
+
+            var thirdParty = allTasks.Where(t =>
+                StartupSurfaceService.ClassifyTask(t.FullPath) == StartupSurfaceService.TaskGroup.ThirdParty).ToList();
+            int inboxCount = allTasks.Count - thirdParty.Count;
+
+            var tpArr = new JsonArray();
+            foreach (var t in thirdParty.Take(200))
+            {
+                tpArr.Add(new JsonObject
+                {
+                    ["name"] = t.TaskName,
+                    ["path"] = t.FullPath,
+                    ["state"] = t.State,
+                    ["action"] = t.Action,
+                    ["user"] = t.User,
+                });
+            }
+
+            return ToJson(new JsonObject
+            {
+                ["type"] = "startup_status",
+                ["logon_active_count"] = logonActive.Count,
+                ["logon_disabled_snapshot_count"] = logonDisabled.Count,
+                ["logon_items"] = logonArr,
+                ["third_party_task_count"] = thirdParty.Count,
+                ["windows_inbox_task_count"] = inboxCount,
+                ["third_party_tasks"] = tpArr,
             });
         }
     }

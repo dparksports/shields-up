@@ -51,7 +51,7 @@ public sealed partial class SettingsPage : Page
         StopAgentBtn.IsEnabled = running;
         AgentStatusText.Text = running
             ? $"Session ACTIVE · 127.0.0.1:{bridge.Port} · client: {bridge.ClientName} · {bridge.ConnectedCalls} call(s). " +
-              "Read-only: the assistant sees firewall state, changes nothing."
+              "Read-only: firewall, attack-surface & startup posture; changes nothing."
             : "Session off. An assistant connecting now is told no session exists.";
     }
 
@@ -59,9 +59,9 @@ public sealed partial class SettingsPage : Page
     {
         if (!await Helpers.Dialogs.Confirm(
                 "Start a READ-ONLY AI access session?\n\n" +
-                "An AI assistant (e.g. ZCode) will be able to READ this machine's firewall state —\n" +
-                "rule summaries and rule listings, exactly what the Firewall page shows.\n\n" +
-                "• The assistant can never change a rule — this surface has no write tools.\n" +
+                "An AI assistant will be able to READ this machine's security posture —\n" +
+                "firewall summaries & rules, attack-surface / name-resolution doors, and startup / scheduled tasks.\n\n" +
+                "• The assistant can never change a rule or setting — this surface has no write tools.\n" +
                 "• Every call is guarded by a per-session token; the endpoint is loopback-only.\n" +
                 "• The session ends when you stop it or close Shields Up.\n\n" +
                 "Start the session?",
@@ -83,6 +83,11 @@ public sealed partial class SettingsPage : Page
     private async Task CheckStartupTask()
     {
         bool exists = await LogonTaskService.ExistsAsync();
+        var health = exists ? await LogonTaskService.InspectHealthAsync() : null;
+        if (exists && health is { Healthy: false })
+        {
+            health = await Task.Run(() => ScheduledTaskGuard.EnsureUnlimited(LogonTaskService.TaskName));
+        }
 
         // Detach events to avoid infinite loop
         LaunchOnStartupCheck.Checked -= LaunchOnStartupCheck_Checked;
@@ -91,6 +96,18 @@ public sealed partial class SettingsPage : Page
         LaunchOnStartupCheck.IsChecked = exists;
 
         LaunchOnStartupCheck.Checked += LaunchOnStartupCheck_Checked;
+        LaunchOnStartupCheck_Unchecked_Reattach();
+
+        StartupHealthText.Text = !exists
+            ? "Logon task not registered."
+            : health is { Healthy: true }
+                ? $"✓ Task health: {health.Detail} ({health.ExecutionTimeLimit})."
+                : $"⚠ Task health: {health?.Detail ?? "unknown"}";
+    }
+
+    private void LaunchOnStartupCheck_Unchecked_Reattach()
+    {
+        LaunchOnStartupCheck.Unchecked -= LaunchOnStartupCheck_Unchecked;
         LaunchOnStartupCheck.Unchecked += LaunchOnStartupCheck_Unchecked;
     }
 

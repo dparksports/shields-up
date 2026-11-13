@@ -24,6 +24,20 @@ namespace ShieldsUp.Core.Services
         public string Scope { get; set; }
         public string RiskNote { get; set; }
         public List<string> WatchDomains { get; set; } = new();
+
+        /// <summary>
+        /// "feature" marks a rule that disables a network-fetching FEATURE at
+        /// its source (e.g. the Bing-in-Search polling) rather than diagnostic
+        /// telemetry. Drives the honest state wording.
+        /// </summary>
+        public string SwitchKind { get; set; }
+
+        /// <summary>Process whose connect rate this rule lowers (e.g. msedgewebview2.exe).</summary>
+        public string TrafficProcess { get; set; }
+
+        public bool IsFeatureToggle =>
+            string.Equals(SwitchKind?.Trim(), "feature", StringComparison.OrdinalIgnoreCase);
+
         public DetectionSpec Detection { get; set; }
         public ProbeSpec StateProbe { get; set; }
         public OptOutSpec OptOut { get; set; }
@@ -97,8 +111,8 @@ namespace ShieldsUp.Core.Services
         public TelemetryState State { get; set; }
         public string StateText => State switch
         {
-            TelemetryState.On => "Telemetry on",
-            TelemetryState.Off => "Opted out",
+            TelemetryState.On => Rule != null && Rule.IsFeatureToggle ? "Feature on — still fetching" : "Telemetry on",
+            TelemetryState.Off => Rule != null && Rule.IsFeatureToggle ? "Off at the source" : "Opted out",
             TelemetryState.Ineffective => "Opt-out not honored",
             _ => "Unknown"
         };
@@ -343,6 +357,7 @@ namespace ShieldsUp.Core.Services
                     case "json":
                     {
                         string path = Expand(rule.OptOut.Path);
+                        EnsureJsonPathAllowed(path);
                         if (!File.Exists(path))
                             await File.WriteAllTextAsync(path, "{}");
                         string previous = ReadJsonKey(path, rule.OptOut.Key)?.ToJsonString();
@@ -554,7 +569,7 @@ namespace ShieldsUp.Core.Services
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "ipconfig.exe",
+                    FileName = ProcessRunner.ResolveTool("ipconfig.exe"),
                     Arguments = "/flushdns",
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -645,15 +660,82 @@ namespace ShieldsUp.Core.Services
             File.WriteAllText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         }
 
+        private static (Microsoft.Win32.RegistryKey Hive, string SubKey) SplitHive(string regKey)
+        {
+            if (regKey.StartsWith("HKCU\\", StringComparison.OrdinalIgnoreCase))
+                return (Microsoft.Win32.Registry.CurrentUser, regKey[5..]);
+            return (Microsoft.Win32.Registry.LocalMachine, StripHklm(regKey));
+        }
+
         private static string ReadRegistry(string regKey, string name)
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(StripHklm(regKey));
+            var (hive, subKey) = SplitHive(regKey);
+            using var key = hive.OpenSubKey(subKey);
             return key?.GetValue(name)?.ToString();
+        }
+
+        // Confine elevated registry writes to telemetry/feature policy locations
+        // so a tampered telemetry_rules.json cannot steer elevated writes elsewhere.
+        private static readonly string[] RegistryWriteAllowList =
+        {
+            @"HKLM\SOFTWARE\Policies\",
+            @"HKLM\SOFTWARE\WOW6432Node\Policies\",
+            @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\",
+            @"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Sensor\",
+            @"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\",
+            @"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings\",
+        };
+
+        private static void EnsureRegistryWriteAllowed(string regKey)
+        {
+            string normalized = (regKey ?? "").Trim().Replace('/', '\\');
+            if (normalized.Length == 0) throw new InvalidOperationException("Empty registry key.");
+            if (!normalized.EndsWith('\\')) normalized += "\\";
+            bool allowed = RegistryWriteAllowList.Any(p =>
+                normalized.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (!allowed)
+                throw new InvalidOperationException(
+                    $"Registry key '{regKey}' is outside the telemetry opt-out allow-list; write refused.");
+        }
+
+        public static bool IsRegistryWriteAllowed(string regKey)
+        {
+            try { EnsureRegistryWriteAllowed(regKey); return true; }
+            catch { return false; }
+        }
+
+        private static void EnsureJsonPathAllowed(string path)
+        {
+            static bool UnderRoot(string candidate, Environment.SpecialFolder root)
+            {
+                string rooted = Path.GetFullPath(candidate);
+                string baseDir = Path.GetFullPath(
+                    Environment.GetFolderPath(root) + Path.DirectorySeparatorChar);
+                return rooted.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+                throw new InvalidOperationException("Empty JSON path.");
+            bool allowed = UnderRoot(path, Environment.SpecialFolder.LocalApplicationData)
+                        || UnderRoot(path, Environment.SpecialFolder.ApplicationData)
+                        || UnderRoot(path, Environment.SpecialFolder.CommonApplicationData)
+                        || UnderRoot(path, Environment.SpecialFolder.UserProfile);
+            if (!allowed)
+                throw new InvalidOperationException(
+                    $"JSON path '{path}' is outside user/program config locations; write refused.");
+        }
+
+        public static bool IsJsonPathAllowed(string path)
+        {
+            try { EnsureJsonPathAllowed(path); return true; }
+            catch { return false; }
         }
 
         private static void WriteRegistry(string regKey, string name, string value, bool dword)
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.CreateSubKey(StripHklm(regKey));
+            EnsureRegistryWriteAllowed(regKey);
+            var (hive, subKey) = SplitHive(regKey);
+            using var key = hive.CreateSubKey(subKey);
             if (dword && int.TryParse(value, out int number))
                 key.SetValue(name, number, Microsoft.Win32.RegistryValueKind.DWord);
             else
@@ -662,7 +744,9 @@ namespace ShieldsUp.Core.Services
 
         private static void DeleteRegistryValue(string regKey, string name)
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(StripHklm(regKey), writable: true);
+            EnsureRegistryWriteAllowed(regKey);
+            var (hive, subKey) = SplitHive(regKey);
+            using var key = hive.OpenSubKey(subKey, writable: true);
             key?.DeleteValue(name, throwOnMissingValue: false);
         }
 
@@ -706,6 +790,7 @@ namespace ShieldsUp.Core.Services
         {
             try
             {
+                AppPaths.EnsureDataRoot();
                 File.WriteAllText(StateFile, JsonSerializer.Serialize(_changes,
                     new JsonSerializerOptions { WriteIndented = true }));
             }

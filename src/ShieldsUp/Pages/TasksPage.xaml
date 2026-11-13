@@ -34,6 +34,7 @@
         <!-- Filter -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
             <RadioButton x:Name="AllRadio" Content="All" Checked="FilterChanged" />
+            <RadioButton x:Name="ThirdPartyRadio" Content="Third-party" Checked="FilterChanged" />
             <RadioButton x:Name="RunningRadio" Content="Running" IsChecked="True" Checked="FilterChanged" />
             <RadioButton x:Name="ReadyRadio" Content="Ready" Checked="FilterChanged" />
             <RadioButton x:Name="DisabledRadio" Content="Disabled" Checked="FilterChanged" />
@@ -46,7 +47,8 @@
                            IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
                 <controls:DataGridTextColumn Header="Name" Binding="{Binding TaskName}" Width="*" />
-                <controls:DataGridTextColumn Header="Path" Binding="{Binding TaskPath}" Width="200" />
+                <controls:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="115" />
+                <controls:DataGridTextColumn Header="Path" Binding="{Binding TaskPath}" Width="190" />
                 <controls:DataGridTemplateColumn Header="State" Width="90">
                     <controls:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

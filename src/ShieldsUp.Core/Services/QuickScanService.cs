@@ -79,11 +79,7 @@ public static class QuickScanService
                                 }
                                 catch { }
 
-                                bool debugOn = false;
-                                string bcd = ProcessRunner.Run("bcdedit", "/enum {current}");
-                                if (!string.IsNullOrEmpty(bcd))
-                                    debugOn = bcd.IndexOf("debug", StringComparison.OrdinalIgnoreCase) >= 0
-                                           && bcd.IndexOf("yes", StringComparison.OrdinalIgnoreCase) >= 0;
+                                bool debugOn = AttackSurfaceService.IsKernelDebugOn();
 
                                 if (present == 0 && !debugOn)
                                     return (true, "no WAN Miniport / KDNIC devices present; kernel debug off");
@@ -238,7 +234,10 @@ public static class QuickScanService
                     try
                     {
                         string group = rule.Grouping ?? "";
-                        if (!string.IsNullOrEmpty(group) && (bool)rule.Enabled)
+                        if (!string.IsNullOrEmpty(group)
+                            && !group.StartsWith("AC-BLOCK", StringComparison.OrdinalIgnoreCase)
+                            && (bool)rule.Enabled
+                            && !FirewallProfileService.ShieldWhitelisted(FirewallService.ResolveGroupName(group), group))
                             count++;
                     }
                     catch { }

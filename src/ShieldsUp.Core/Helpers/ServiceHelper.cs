@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-using System.Diagnostics;
 
 namespace ShieldsUp.Core.Helpers
 {
@@ -79,7 +82,9 @@ namespace ShieldsUp.Core.Helpers
         }
 
         /// <summary>
-        /// Stop and disable a service.
+        /// Stop and disable a service. Records the pre-disable start type
+        /// (first-disable-wins) so EnableAndStart restores Auto vs Manual
+        /// instead of hardcoding Manual across reboots.
         /// </summary>
         public static void StopAndDisable(string serviceName)
         {
@@ -95,15 +100,29 @@ namespace ShieldsUp.Core.Helpers
                 }
             }
             catch { }
+            string before = GetStartMode(serviceName);
+            if (string.Equals(before, "Auto", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(before, "Manual", StringComparison.OrdinalIgnoreCase))
+            {
+                RecordStartType(serviceName, before);
+            }
             SetStartupType(serviceName, SERVICE_DISABLED);
         }
 
+        public static uint ResolveRestoreStartType(string recorded) =>
+            string.Equals(recorded, "Auto", StringComparison.OrdinalIgnoreCase)
+                ? SERVICE_AUTO_START
+                : SERVICE_DEMAND_START;
+
         /// <summary>
-        /// Enable (manual) and start a service.
+        /// Re-enable and start a service, restoring its recorded pre-disable
+        /// start type (Manual fallback when no record exists).
         /// </summary>
         public static void EnableAndStart(string serviceName)
         {
-            SetStartupType(serviceName, SERVICE_DEMAND_START);
+            string restore = TakeRecordedStartType(serviceName);
+            uint startType = ResolveRestoreStartType(restore);
+            SetStartupType(serviceName, startType);
             try
             {
                 using (var sc = new ServiceController(serviceName))
@@ -111,6 +130,75 @@ namespace ShieldsUp.Core.Helpers
                     if (sc.Status == ServiceControllerStatus.Stopped)
                     {
                         sc.Start();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // ── pre-disable start type ledger ────────────────────────────────
+
+        private static readonly object BackupLock = new();
+
+        private static string LegacyAutoCommandBackupPath => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "AutoCommand", "service_start_backup.txt");
+
+        private static void RecordStartType(string serviceName, string startMode)
+        {
+            lock (BackupLock)
+            {
+                try
+                {
+                    var map = ReadBackupMapFromPaths(AppPaths.ServiceBackupPath, LegacyAutoCommandBackupPath);
+                    if (map.ContainsKey(serviceName)) return; // first disable wins
+                    map[serviceName] = startMode;
+                    AppPaths.EnsureDataRoot();
+                    File.WriteAllLines(AppPaths.ServiceBackupPath, map.Select(kv => kv.Key + "=" + kv.Value));
+                }
+                catch { /* best-effort: re-enable falls back to Manual */ }
+            }
+        }
+
+        private static string TakeRecordedStartType(string serviceName)
+        {
+            lock (BackupLock)
+            {
+                try
+                {
+                    var map = ReadBackupMapFromPaths(AppPaths.ServiceBackupPath, LegacyAutoCommandBackupPath);
+                    if (!map.TryGetValue(serviceName, out string mode)) return null;
+                    map.Remove(serviceName);
+                    AppPaths.EnsureDataRoot();
+                    File.WriteAllLines(AppPaths.ServiceBackupPath, map.Select(kv => kv.Key + "=" + kv.Value));
+                    return mode;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+
+        public static Dictionary<string, string> ReadBackupMapFromPaths(string primaryPath, string legacyPath)
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            LoadLinesInto(legacyPath, map);
+            LoadLinesInto(primaryPath, map);
+            return map;
+        }
+
+        private static void LoadLinesInto(string path, Dictionary<string, string> map)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    foreach (var line in File.ReadAllLines(path))
+                    {
+                        int eq = line.IndexOf('=');
+                        if (eq > 0 && line.Length > eq + 1)
+                            map[line[..eq].Trim()] = line[(eq + 1)..].Trim();
                     }
                 }
             }

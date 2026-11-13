@@ -122,7 +122,7 @@ namespace ShieldsUp.Core.Services
             "vmcompute",
         };
 
-        private static bool ShieldWhitelisted(string display, string rawGroup)
+        public static bool ShieldWhitelisted(string display, string rawGroup)
         {
             foreach (var wl in ShieldWhitelistDisplay)
                 if (display.Equals(wl, StringComparison.OrdinalIgnoreCase) ||
@@ -137,10 +137,12 @@ namespace ShieldsUp.Core.Services
 
         private Task<GroupToggleResult> ApplyShieldUp()
         {
-            // Disable ALL grouped rules, then re-enable the whitelist
+            // Single-pass over INetFwRules: spare AC-BLOCK-* block rules, enable
+            // whitelisted groups (mDNS + Core Networking + Hyper-V/WSL VM networking),
+            // disable every other grouped rule, and skip redundant put_Enabled writes.
             return Task.Run(() =>
             {
-                    var result = new GroupToggleResult { GroupName = "Shield Up (block all)" };
+                var result = new GroupToggleResult { GroupName = "Shield Up (block all)" };
                 try
                 {
                     Type fwPolicyType = Type.GetTypeFromProgID("HNetCfg.FwPolicy2");
@@ -149,21 +151,32 @@ namespace ShieldsUp.Core.Services
                     int whitelistEnabled = 0;
                     bool vmSpared = false;
 
-                    // Pass 1: Disable everything with a group
                     foreach (dynamic rule in fwPolicy.Rules)
                     {
                         try
                         {
                             string group = rule.Grouping ?? "";
                             if (string.IsNullOrEmpty(group)) continue;
+                            if (group.StartsWith("AC-BLOCK", StringComparison.OrdinalIgnoreCase)) continue;
+
+                            string display = FirewallService.ResolveGroupName(group);
+                            bool shouldEnable = ShieldWhitelisted(display, group);
+
+                            if (shouldEnable &&
+                                !display.Equals("mDNS", StringComparison.OrdinalIgnoreCase) &&
+                                !display.Equals("Core Networking", StringComparison.OrdinalIgnoreCase))
+                                vmSpared = true;
 
                             bool wasEnabled = (bool)rule.Enabled;
-                            rule.Enabled = false;
                             result.Matched++;
-                            if (wasEnabled)
+                            if (shouldEnable)
+                                whitelistEnabled++;
+
+                            if (wasEnabled != shouldEnable)
                             {
+                                rule.Enabled = shouldEnable;
                                 result.Changed++;
-                                disabledCount++;
+                                if (!shouldEnable) disabledCount++;
                             }
                         }
                         catch (Exception ex)
@@ -173,35 +186,8 @@ namespace ShieldsUp.Core.Services
                         }
                     }
 
-                    // Pass 2: Re-enable whitelisted groups (networking basics
-                    // + VM infrastructure — see the note above)
-                    foreach (dynamic rule in fwPolicy.Rules)
-                    {
-                        try
-                        {
-                            string group = rule.Grouping ?? "";
-                            if (string.IsNullOrEmpty(group)) continue;
-                            string display = FirewallService.ResolveGroupName(group);
-                            if (!ShieldWhitelisted(display, group)) continue;
-                            if (!display.Equals("mDNS", StringComparison.OrdinalIgnoreCase) &&
-                                !display.Equals("Core Networking", StringComparison.OrdinalIgnoreCase))
-                                vmSpared = true;
-
-                            bool wasEnabled = (bool)rule.Enabled;
-                            rule.Enabled = true;
-                            result.Matched++;
-                            whitelistEnabled++;
-                            if (!wasEnabled) result.Changed++;
-                        }
-                        catch (Exception ex)
-                        {
-                            result.Failed++;
-                            if (result.FirstError == null) result.FirstError = ex.Message;
-                        }
-                    }
-
                     result.Notes = $"{disabledCount} grouped rule(s) disabled, {whitelistEnabled} whitelist rule(s) " +
-                                   $"re-enabled{(vmSpared ? " (VM networking spared)" : "")}";
+                                   $"kept/re-enabled{(vmSpared ? " (VM networking spared)" : "")}";
                 }
                 catch (Exception ex)
                 {

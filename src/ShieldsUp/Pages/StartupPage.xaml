@@ -21,10 +21,12 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="Startup Persistence Scanner" Style="{StaticResource PageHeaderText}" />
-                <TextBlock Text="Scans registry Run keys and Startup folders for persistent binaries."
-                           Style="{StaticResource SubtleText}" />
+                <TextBlock Text="Scans registry Run keys and Startup folders. Registry Run entries can be reversibly disabled (snapshotted) or restored."
+                           Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
             </StackPanel>
-            <StackPanel Grid.Column="2" Orientation="Horizontal">
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                <Button Content="Disable (Snapshot)" Click="DisableEntry_Click" />
+                <Button Content="Restore" Click="RestoreEntry_Click" />
                 <Button Content="↻ Refresh" Style="{StaticResource PrimaryButton}" Click="RefreshBtn_Click" />
             </StackPanel>
         </Grid>
@@ -34,13 +36,17 @@
         <controls:DataGrid Grid.Row="1" x:Name="StartupGrid" AutoGenerateColumns="False"
                            IsReadOnly="True" SelectionMode="Single" Foreground="#1D1D1F">
             <controls:DataGrid.Columns>
-                <controls:DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="140" />
-                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="200" />
+                <controls:DataGridTextColumn Header="State" Binding="{Binding State}" Width="150" />
+                <controls:DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="130" />
+                <controls:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="190" />
                 <controls:DataGridTextColumn Header="Target / Command" Binding="{Binding Value}" Width="*" />
             </controls:DataGrid.Columns>
             <controls:DataGrid.ContextFlyout>
                 <MenuFlyout>
-                    <MenuFlyoutItem Text="Delete Entry" Click="DeleteEntry_Click" />
+                    <MenuFlyoutItem Text="Disable (Snapshot)" Click="DisableEntry_Click" />
+                    <MenuFlyoutItem Text="Restore Snapshot" Click="RestoreEntry_Click" />
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="Delete Permanently" Click="DeleteEntry_Click" />
                 </MenuFlyout>
             </controls:DataGrid.ContextFlyout>
         </controls:DataGrid>

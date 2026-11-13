@@ -122,8 +122,7 @@ namespace ShieldsUp.Core.Helpers
             {
                 try
                 {
-                    var dir = Path.GetDirectoryName(_configPath);
-                    if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    AppPaths.EnsureDataRoot();
                     // Sorted lists keep the file diffable across saves
                     var file = new ConfigFile
                     {
@@ -131,8 +130,13 @@ namespace ShieldsUp.Core.Helpers
                         CustomPackages = _customPackages.OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList(),
                         CustomPatterns = _customPatterns.OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList()
                     };
-                    File.WriteAllText(_configPath,
+                    string tmp = _configPath + ".tmp";
+                    File.WriteAllText(tmp,
                         JsonSerializer.Serialize(file, new JsonSerializerOptions { WriteIndented = true }));
+                    if (File.Exists(_configPath))
+                        File.Replace(tmp, _configPath, null);
+                    else
+                        File.Move(tmp, _configPath);
                 }
                 catch
                 {

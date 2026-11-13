@@ -61,9 +61,9 @@ namespace ShieldsUp.Core.Helpers
                 var psCommand = GetInstallCommand(path);
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "powershell",
-                    Arguments = $"-Command \"{psCommand}\"",
-                    UseShellExecute = true,
+                    FileName = ProcessRunner.ResolveTool("powershell.exe"),
+                    Arguments = $"-NoProfile -Command \"{psCommand}\"",
+                    UseShellExecute = false,
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
                 };

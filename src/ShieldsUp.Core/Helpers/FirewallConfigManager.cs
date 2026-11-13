@@ -15,7 +15,8 @@ namespace ShieldsUp.Core.Helpers
         public static FirewallConfigManager Instance => _instance ??= new FirewallConfigManager();
 
         private readonly string _configPath;
-        public Dictionary<string, string> RuleOverrides { get; set; } = new Dictionary<string, string>();
+        private readonly object _lock = new();
+        public Dictionary<string, string> RuleOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         public FirewallConfigManager()
         {
@@ -25,40 +26,57 @@ namespace ShieldsUp.Core.Helpers
 
         public void Load()
         {
-            try
+            lock (_lock)
             {
-                if (File.Exists(_configPath))
+                try
                 {
-                    string json = File.ReadAllText(_configPath);
-                    var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                    if (data != null) RuleOverrides = data;
+                    if (File.Exists(_configPath))
+                    {
+                        string json = File.ReadAllText(_configPath);
+                        var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                        if (data != null)
+                            RuleOverrides = new Dictionary<string, string>(data, StringComparer.OrdinalIgnoreCase);
+                    }
                 }
+                catch { }
             }
-            catch { }
         }
 
         public void Save()
         {
-            try
+            lock (_lock)
             {
-                var dir = Path.GetDirectoryName(_configPath);
-                if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                string json = JsonSerializer.Serialize(RuleOverrides, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_configPath, json);
+                try
+                {
+                    AppPaths.EnsureDataRoot();
+                    string tmp = _configPath + ".tmp";
+                    string json = JsonSerializer.Serialize(RuleOverrides, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(tmp, json);
+                    if (File.Exists(_configPath))
+                        File.Replace(tmp, _configPath, null);
+                    else
+                        File.Move(tmp, _configPath);
+                }
+                catch { }
             }
-            catch { }
         }
 
         public void SetOverride(string ruleName, bool enabled)
         {
             string state = enabled ? "True" : "False";
-            RuleOverrides[ruleName] = state;
+            lock (_lock)
+            {
+                RuleOverrides[ruleName] = state;
+            }
             Save();
         }
 
         public string GetOverride(string ruleName)
         {
-            return RuleOverrides.TryGetValue(ruleName, out string val) ? val : null;
+            lock (_lock)
+            {
+                return RuleOverrides.TryGetValue(ruleName, out string val) ? val : null;
+            }
         }
     }
 }

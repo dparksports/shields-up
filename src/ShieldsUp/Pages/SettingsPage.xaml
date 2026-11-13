@@ -34,10 +34,11 @@
                 <Border Style="{StaticResource CardPanel}">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Startup Behavior" Style="{StaticResource SectionHeaderText}" />
-                        <TextBlock Text="Launch Shields Up automatically when you log on (scheduled task with highest privileges — no extra UAC prompt)."
+                        <TextBlock Text="Launch Shields Up automatically when you log on (scheduled task with highest privileges, unlimited runtime, starts on battery — no extra UAC prompt)."
                                    Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
                         <CheckBox x:Name="LaunchOnStartupCheck" Content="Launch at logon"
                                   Checked="LaunchOnStartupCheck_Checked" Unchecked="LaunchOnStartupCheck_Unchecked" />
+                        <TextBlock x:Name="StartupHealthText" Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
 
@@ -93,7 +94,7 @@
                 <Border Style="{StaticResource CardPanel}">
                     <StackPanel Spacing="8">
                         <TextBlock Text="AI access" Style="{StaticResource SectionHeaderText}" />
-                        <TextBlock Text="Let an AI assistant (e.g. ZCode) READ this machine's firewall state over a loopback-only, token-guarded session: rule summaries and rule listings, the same data this app's Firewall page shows. Read-only — the assistant can never change a rule. The session ends when you stop it or close Shields Up."
+                        <TextBlock Text="Let an AI assistant READ this machine's security posture over a loopback-only, token-guarded session: firewall summary &amp; rules, attack-surface / name-resolution doors, and startup / scheduled-task inventory. Strictly read-only — the assistant can never change a setting or rule. The session ends when you stop it or close Shields Up."
                                    Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button x:Name="StartAgentBtn" Content="Start session"

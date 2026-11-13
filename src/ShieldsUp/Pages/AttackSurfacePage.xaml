@@ -21,31 +21,42 @@
             </StackPanel>
         </Grid>
 
-        <!-- At-a-glance counts: four equal cells so nothing clips at any width -->
+        <!-- At-a-glance counts: 2x3 equal cells so nothing clips at 800px width -->
         <Border Grid.Row="1" Margin="0,0,0,12" Background="#F2F5FA" BorderBrush="#E1E7F0"
                 BorderThickness="1" CornerRadius="8" Padding="12,8">
-            <Grid>
+            <Grid RowSpacing="6" ColumnSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="WAN Miniports" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
                     <TextBlock x:Name="MiniportCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="WiFi Direct" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
                     <TextBlock x:Name="WifiDirectCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="KDNET" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
                     <TextBlock x:Name="KdnetCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 </StackPanel>
-                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="SSTP Service" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
                     <TextBlock x:Name="SstpCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Name-Res Doors" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="NameResCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Hotpatch Task" Style="{StaticResource SubtleText}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="HotpatchCountText" Text="…" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -177,6 +188,80 @@
                                 </controls:DataGrid.Columns>
                             </controls:DataGrid>
                         </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- List 5: Legacy Name-Resolution Doors -->
+                <StackPanel ToolTipService.ToolTip="Broadcast/multicast name-resolution protocols (LLMNR, NetBIOS over TCP/IP, mDNS) — credential-poisoning &amp; LAN discovery surface">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Legacy Name-Resolution Doors" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock x:Name="NameResSectionCount" Text="" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Bottom" Margin="0,0,0,9" />
+                    </StackPanel>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="LLMNR (UDP 5355 multicast)" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="LlmnrStatusText" Text="Loading..." Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button x:Name="LlmnrToggleBtn" Grid.Column="1" Content="Disable LLMNR"
+                                        Style="{StaticResource PrimaryButton}" Click="LlmnrToggleBtn_Click" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="NetBIOS over TCP/IP (UDP 137–139)" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="NetbiosStatusText" Text="Loading..." Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button x:Name="NetbiosToggleBtn" Grid.Column="1" Content="Disable NetBIOS"
+                                        Style="{StaticResource PrimaryButton}" Click="NetbiosToggleBtn_Click" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="mDNS Multicast (UDP 5353 — firewall-scoped)" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="MdnsStatusText" Text="Loading..." Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button x:Name="MdnsToggleBtn" Grid.Column="1" Content="Block Outbound mDNS"
+                                        Style="{StaticResource PrimaryButton}" Click="MdnsToggleBtn_Click" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- List 6: Windows Hotpatch Monitoring Task -->
+                <StackPanel ToolTipService.ToolTip="\Microsoft\Windows\Hotpatch\Monitoring — boot-time SYSTEM servicing readiness task (Windows 11 24H2+)">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Windows Hotpatch Monitoring" Style="{StaticResource SectionHeaderText}" />
+                        <TextBlock x:Name="HotpatchSectionCount" Text="" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Bottom" Margin="0,0,0,9" />
+                    </StackPanel>
+                    <Border Style="{StaticResource CardPanel}">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="\Microsoft\Windows\Hotpatch\Monitoring" FontWeight="SemiBold" />
+                                <TextBlock x:Name="HotpatchStatusText" Text="Loading..." Style="{StaticResource SubtleText}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button x:Name="HotpatchToggleBtn" Grid.Column="1" Content="Disable Task"
+                                    Style="{StaticResource PrimaryButton}" Click="HotpatchToggleBtn_Click" />
+                        </Grid>
                     </Border>
                 </StackPanel>
 

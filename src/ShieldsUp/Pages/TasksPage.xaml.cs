@@ -23,8 +23,9 @@ public sealed partial class TasksPage : Page
     /// <summary>Task name and state survive the narrow layout; path and user do not.</summary>
     private void ApplyResponsiveColumns(double width) =>
         Helpers.GridColumns.Apply(TasksGrid, width,
-            ("Path", 900),
-            ("User", 900),
+            ("Path", 920),
+            ("User", 920),
+            ("Scope", 820),
             ("Action", 760));
 
     private async void RefreshBtn_Click(object sender, RoutedEventArgs e) => await LoadTasks();
@@ -42,7 +43,9 @@ public sealed partial class TasksPage : Page
         if (RunningRadio == null || TasksGrid == null || TaskCountText == null) return;
         IEnumerable<ScheduledTaskItem> filtered = _allTasks;
 
-        if (RunningRadio.IsChecked == true)
+        if (ThirdPartyRadio?.IsChecked == true)
+            filtered = filtered.Where(t => t.Scope == "Third-party");
+        else if (RunningRadio.IsChecked == true)
             filtered = filtered.Where(t => t.State == "Running");
         else if (ReadyRadio.IsChecked == true)
             filtered = filtered.Where(t => t.State == "Ready");
@@ -51,16 +54,17 @@ public sealed partial class TasksPage : Page
 
         var list = filtered.OrderBy(t => t.TaskPath).ThenBy(t => t.TaskName).ToList();
         TasksGrid.ItemsSource = list;
+        int tpCount = _allTasks.Count(t => t.Scope == "Third-party");
         TaskCountText.Text = $"{list.Count} tasks" +
             (AllRadio.IsChecked == true
-                ? $" ({_allTasks.Count(t => t.State == "Running")} running, {_allTasks.Count(t => t.State == "Ready")} ready, {_allTasks.Count(t => t.State == "Disabled")} disabled)"
+                ? $" ({tpCount} third-party, {_allTasks.Count(t => t.State == "Running")} running, {_allTasks.Count(t => t.State == "Ready")} ready, {_allTasks.Count(t => t.State == "Disabled")} disabled)"
                 : "");
     }
 
     private string GetSelectedTaskFullPath()
     {
         if (TasksGrid.SelectedItem is not ScheduledTaskItem task) return null;
-        // Reconstruct the full path for COM API
+        if (!string.IsNullOrEmpty(task.FullPath)) return task.FullPath;
         string path = task.TaskPath;
         if (path == "\\") return "\\" + task.TaskName;
         if (path == "Windows System") return $@"\Microsoft\Windows\{task.TaskName}";

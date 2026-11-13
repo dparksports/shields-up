@@ -39,6 +39,7 @@ namespace ShieldsUp.Core.Services
             "WindowsCalendar",        // Windows Calendar
             "WindowsCalculator",      // Calculator
             "WindowsSoundRecorder",   // Sound Recorder
+            "MicrosoftStickyNotes",   // Sticky Notes
             "WebExperience",          // Windows Web Experience Pack
             "WindowsTerminal",        // Terminal
             "WidgetsPlatformRuntime", // Widgets Platform Runtime
@@ -446,7 +447,7 @@ namespace ShieldsUp.Core.Services
                 try
                 {
                     string oneDriveExe = System.IO.Path.Combine(item.InstallLocation, "OneDrive.exe");
-                    if (System.IO.File.Exists(oneDriveExe))
+                    if (IsTrustedOneDriveBinary(oneDriveExe, "OneDrive.exe"))
                         await Task.Run(() => Helpers.ProcessRunner.Run(oneDriveExe, "/shutdown"))
                                  .WaitAsync(TimeSpan.FromSeconds(10));
                 }
@@ -479,12 +480,14 @@ namespace ShieldsUp.Core.Services
         /// <summary>
         /// Resolves the OneDrive uninstaller executable: the registered UninstallString
         /// first (it points at the versioned OneDriveSetup.exe), then a scan of the
-        /// install root's versioned subfolders.
+        /// install root's versioned subfolders. Every source here can be user-writable
+        /// (HKCU registry values, %LOCALAPPDATA% install roots) while the resolved path
+        /// is executed elevated, so only a Microsoft-signed OneDriveSetup.exe is accepted.
         /// </summary>
         private static string LocateOneDriveUninstaller(string installRoot)
         {
             string path = ExtractExecutablePath(ReadOneDriveRegistryEntry().UninstallString);
-            if (path != null && System.IO.File.Exists(path)) return path;
+            if (IsTrustedOneDriveBinary(path, "OneDriveSetup.exe")) return path;
 
             try
             {
@@ -492,12 +495,23 @@ namespace ShieldsUp.Core.Services
                     .Select(dir => System.IO.Path.Combine(dir, "OneDriveSetup.exe"))
                     .Where(System.IO.File.Exists)
                     .OrderByDescending(p => System.IO.Path.GetDirectoryName(p), StringComparer.OrdinalIgnoreCase)
-                    .FirstOrDefault();
+                    .FirstOrDefault(p => IsTrustedOneDriveBinary(p, "OneDriveSetup.exe"));
             }
             catch
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Accepts a OneDrive binary path only when the file exists, has the exact
+        /// expected leaf name, and passes WinVerifyTrust as Microsoft-signed.
+        /// </summary>
+        public static bool IsTrustedOneDriveBinary(string path, string leafName)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path)) return false;
+            if (!string.Equals(System.IO.Path.GetFileName(path), leafName, StringComparison.OrdinalIgnoreCase)) return false;
+            return AuthenticodeVerifier.IsMicrosoftSigned(path, out _);
         }
 
         /// <summary>
@@ -576,6 +590,8 @@ namespace ShieldsUp.Core.Services
                 {
                     if (string.IsNullOrWhiteSpace(binaryPath) || !System.IO.File.Exists(binaryPath))
                         return (false, $"{binaryPath} was not found.");
+                    if (!AuthenticodeVerifier.IsMicrosoftSigned(binaryPath, out string sigDetail))
+                        return (false, $"Refused to run unsigned/non-Microsoft binary ({sigDetail}).");
 
                     var (output, error, exitCode) = Helpers.ProcessRunner.RunWithDetails(binaryPath, arguments);
                     string details = string.Join("\n", new[] { output, error }

@@ -194,6 +194,7 @@ namespace ShieldsUp.Core.Services
             if (!File.Exists(exePath)) return (false, "File not found.");
             if (IsFrozen(exePath)) return (true, "Already frozen.");
 
+            AppPaths.EnsureDataRoot();
             Directory.CreateDirectory(BackupDir);
             string backupFile = Path.Combine(BackupDir,
                 $"{Path.GetFileNameWithoutExtension(exePath)}_{DateTime.Now:yyyyMMdd_HHmmss}.acl");
@@ -204,17 +205,9 @@ namespace ShieldsUp.Core.Services
             if (saveCode != 0)
                 return (false, $"ACL snapshot failed (icacls /save exit {saveCode}). {saveErr}");
 
-            string user = Environment.UserName;
-            var (_, denyErr, denyCode) = await ProcessRunner.RunWithDetailsAsync("icacls.exe",
-                $"\"{exePath}\" /deny \"{user}:(DE,WD,AD)\"");
-            if (denyCode != 0)
-                return (false, $"Deny ACE failed (icacls /deny exit {denyCode}). {denyErr}");
-
-            // Trust but verify: the deny must actually be on the file now
-            var (listOut, _, _) = await ProcessRunner.RunWithDetailsAsync("icacls.exe", $"\"{exePath}\"");
-            if (!(listOut ?? string.Empty).Contains("(DENY)", StringComparison.OrdinalIgnoreCase))
-                return (false, "Deny ACE did not stick — aborting (state unchanged, backup kept).");
-
+            // Journal-ahead persistence: record the backup path on disk BEFORE
+            // applying the deny ACE so a crash mid-freeze never orphans an
+            // unrecorded deny ACE without its thaw backup reference.
             _state[exePath] = new FrozenEntry
             {
                 ExePath = exePath,
@@ -222,6 +215,27 @@ namespace ShieldsUp.Core.Services
                 FrozenAt = DateTime.Now,
                 BackupFile = backupFile
             };
+            SaveState();
+
+            string user = Environment.UserName;
+            var (_, denyErr, denyCode) = await ProcessRunner.RunWithDetailsAsync("icacls.exe",
+                $"\"{exePath}\" /deny \"{user}:(DE,WD,AD)\"");
+            if (denyCode != 0)
+            {
+                _state.Remove(exePath);
+                SaveState();
+                return (false, $"Deny ACE failed (icacls /deny exit {denyCode}). {denyErr}");
+            }
+
+            // Trust but verify: the deny must actually be on the file now
+            var (listOut, _, _) = await ProcessRunner.RunWithDetailsAsync("icacls.exe", $"\"{exePath}\"");
+            if (!(listOut ?? string.Empty).Contains("(DENY)", StringComparison.OrdinalIgnoreCase))
+            {
+                _state.Remove(exePath);
+                SaveState();
+                return (false, "Deny ACE did not stick — aborting (state unchanged, backup kept).");
+            }
+
             SaveState();
             return (true, $"{Path.GetFileName(exePath)} frozen: delete/write denied for {user}, read+execute untouched.");
         }
@@ -259,7 +273,11 @@ namespace ShieldsUp.Core.Services
         {
             try
             {
-                if (!File.Exists(StateFile)) return;
+                if (!File.Exists(StateFile))
+                {
+                    MigrateLegacyState();
+                    return;
+                }
                 var entries = JsonSerializer.Deserialize<List<FrozenEntry>>(File.ReadAllText(StateFile));
                 if (entries == null) return;
                 foreach (var entry in entries)
@@ -269,12 +287,51 @@ namespace ShieldsUp.Core.Services
             catch { /* unreadable state — start empty; frozen ACLs stay frozen */ }
         }
 
+        private void MigrateLegacyState()
+        {
+            try
+            {
+                string legacyPath = Path.Combine(Environment.CurrentDirectory, "update_freeze.json");
+                if (!File.Exists(legacyPath)) return;
+
+                var entries = JsonSerializer.Deserialize<List<FrozenEntry>>(File.ReadAllText(legacyPath));
+                if (entries == null || entries.Count == 0) return;
+
+                AppPaths.EnsureDataRoot();
+                Directory.CreateDirectory(BackupDir);
+                string legacyBackupDir = Path.Combine(Environment.CurrentDirectory, "freeze_backups");
+                foreach (var entry in entries)
+                {
+                    if (string.IsNullOrEmpty(entry.ExePath)) continue;
+                    if (entry.BackupFile != null && !Path.IsPathRooted(entry.BackupFile))
+                    {
+                        string old = Path.Combine(legacyBackupDir, entry.BackupFile);
+                        if (File.Exists(old))
+                        {
+                            string newBackup = Path.Combine(BackupDir, Path.GetFileName(entry.BackupFile));
+                            File.Copy(old, newBackup, overwrite: true);
+                            entry.BackupFile = newBackup;
+                        }
+                    }
+                    _state[entry.ExePath] = entry;
+                }
+                SaveState();
+            }
+            catch { /* best-effort migration */ }
+        }
+
         private void SaveState()
         {
             try
             {
-                File.WriteAllText(StateFile, JsonSerializer.Serialize(_state.Values.ToList(),
+                AppPaths.EnsureDataRoot();
+                string tmp = StateFile + ".tmp";
+                File.WriteAllText(tmp, JsonSerializer.Serialize(_state.Values.ToList(),
                     new JsonSerializerOptions { WriteIndented = true }));
+                if (File.Exists(StateFile))
+                    File.Replace(tmp, StateFile, null);
+                else
+                    File.Move(tmp, StateFile);
             }
             catch { /* best-effort: the ACL deny is the real enforcement */ }
         }

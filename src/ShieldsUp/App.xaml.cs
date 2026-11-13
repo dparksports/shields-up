@@ -1,3 +1,4 @@
+using ShieldsUp.Core;
 using ShieldsUp.Core.Agent;
 using ShieldsUp.Core.Services;
 
@@ -11,6 +12,7 @@ public partial class App : Application
     {
         InitializeComponent();
 
+        AppPaths.EnsureDataRoot();
         AppLogger.SessionHeader();
         AppLogger.EnsureCrashDumps();
 
@@ -41,6 +43,9 @@ public partial class App : Application
         MainWnd.Closed += (_, _) => ShieldsUpAgentBridge.Stop();
         MainWnd.Activate();
         AppLogger.Log("startup", "MainWindow activated");
+
+        // Auto-cure any legacy PT72H / battery-restricted logon task left by an older build
+        _ = Task.Run(() => ScheduledTaskGuard.EnsureUnlimited(LogonTaskService.TaskName));
     }
 
     private void OnWinUIUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)

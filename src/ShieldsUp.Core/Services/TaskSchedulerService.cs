@@ -121,6 +121,10 @@ namespace ShieldsUp.Core.Services
                         {
                             TaskName = name,
                             TaskPath = folderPath,
+                            FullPath = fullPath,
+                            Scope = StartupSurfaceService.ClassifyTask(fullPath) == StartupSurfaceService.TaskGroup.Inbox
+                                ? "Windows inbox"
+                                : "Third-party",
                             State = state,
                             Action = actionStr,
                             User = user
@@ -249,6 +253,32 @@ namespace ShieldsUp.Core.Services
             catch
             {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Three-state read of a task's scheduler state; returns null when the
+        /// task is not registered (e.g. Hotpatch Monitoring on builds without hotpatching).
+        /// </summary>
+        public string GetTaskStateText(string taskPath)
+        {
+            try
+            {
+                dynamic ts = GetService();
+                dynamic rootFolder = ts.GetFolder("\\");
+                dynamic task = rootFolder.GetTask(taskPath);
+                return ((int)task.State) switch
+                {
+                    1 => "Disabled",
+                    2 => "Queued",
+                    3 => "Ready",
+                    4 => "Running",
+                    _ => "Unknown"
+                };
+            }
+            catch
+            {
+                return null;
             }
         }
 

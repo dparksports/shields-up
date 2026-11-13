@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,6 +12,38 @@ namespace ShieldsUp.Core.Helpers
     /// </summary>
     public static class ProcessRunner
     {
+        // Inbox tools are pinned to System32: this app ships as a portable
+        // folder and runs elevated, so a bare name would otherwise resolve
+        // through the app directory and current directory (both user-writable)
+        // before System32 — a planted netsh.exe/bcdedit.exe next to the app
+        // would execute with admin rights. Names that already carry a path
+        // component are used as-is; unknown names fall back to PATH search.
+        public static string ResolveTool(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName) || fileName.IndexOfAny(new[] { '/', '\\' }) >= 0)
+                return fileName;
+            try
+            {
+                string sys = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                if (string.Equals(fileName, "powershell", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(fileName, "powershell.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    string ps = Path.Combine(sys, "WindowsPowerShell", "v1.0", "powershell.exe");
+                    if (File.Exists(ps)) return ps;
+                }
+                string withExe = Path.HasExtension(fileName) ? fileName : fileName + ".exe";
+                string pinned = Path.Combine(sys, withExe);
+                return File.Exists(pinned) ? pinned : fileName;
+            }
+            catch
+            {
+                return fileName;
+            }
+        }
+
+        // Hard ceiling so a hung child tool never blocks the app forever.
+        private const int ExitTimeoutMs = 120_000;
+
         public static string Run(string fileName, string arguments)
         {
             return Run(fileName, arguments, null);
@@ -23,6 +56,7 @@ namespace ShieldsUp.Core.Helpers
         /// </summary>
         public static string Run(string fileName, string arguments, Encoding outputEncoding)
         {
+            fileName = ResolveTool(fileName);
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -40,14 +74,23 @@ namespace ShieldsUp.Core.Helpers
             proc.Start();
             // Drain stderr concurrently: a child that fills the stderr pipe
             // while we block on stdout deadlocks the classic way.
-            using var _errDrain = proc.StandardError.ReadToEndAsync();
+            // Deliberately NOT `using`: disposing a Task that has not reached
+            // a final state throws ("A task may only be disposed if it is in
+            // a completion state"), and WaitForExit() does not guarantee the
+            // async stderr read has drained the pipe tail.
+            _ = proc.StandardError.ReadToEndAsync();
             string output = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit();
+            if (!proc.WaitForExit(ExitTimeoutMs))
+            {
+                try { proc.Kill(); } catch { }
+                proc.WaitForExit();
+            }
             return StripNullChars(output);
         }
 
         public static (string Output, string Error, int ExitCode) RunWithDetails(string fileName, string arguments)
         {
+            fileName = ResolveTool(fileName);
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -65,7 +108,11 @@ namespace ShieldsUp.Core.Helpers
             // deadlock when the child fills the second pipe first.
             var errTask = proc.StandardError.ReadToEndAsync();
             string output = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit();
+            if (!proc.WaitForExit(ExitTimeoutMs))
+            {
+                try { proc.Kill(); } catch { }
+                proc.WaitForExit();
+            }
             string error = errTask.GetAwaiter().GetResult();   // pipes closed at exit — completes immediately
             return (StripNullChars(output), StripNullChars(error), proc.ExitCode);
         }
@@ -96,13 +143,18 @@ namespace ShieldsUp.Core.Helpers
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = fileName,
+                    FileName = ResolveTool(fileName),
                     Arguments = arguments,
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     WindowStyle = ProcessWindowStyle.Hidden
                 };
-                Process.Start(psi)?.WaitForExit();
+                using var proc = Process.Start(psi);
+                if (proc != null && !proc.WaitForExit(ExitTimeoutMs))
+                {
+                    try { proc.Kill(); } catch { }
+                    proc.WaitForExit();
+                }
             }
             catch (Exception ex)
             {

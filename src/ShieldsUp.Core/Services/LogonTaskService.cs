@@ -10,7 +10,7 @@ public static class LogonTaskService
 {
     public const string TaskName = "ShieldsUpStartupTask";
 
-    /// <summary>Creates the highest-privilege logon task.</summary>
+    /// <summary>Creates the highest-privilege logon task and removes the 72-hour / battery kill defaults.</summary>
     public static Task<bool> EnableAsync()
     {
         return Task.Run(() =>
@@ -20,7 +20,9 @@ public static class LogonTaskService
                 string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                 var r = Helpers.ProcessRunner.RunWithDetails("schtasks",
                     $"/create /tn \"{TaskName}\" /tr \"\\\"{exePath}\\\"\" /sc onlogon /rl highest /f");
-                return r.ExitCode == 0;
+                if (r.ExitCode != 0) return false;
+                var health = ScheduledTaskGuard.Repair(TaskName);
+                return health.Exists;
             }
             catch
             {
@@ -28,6 +30,10 @@ public static class LogonTaskService
             }
         });
     }
+
+    /// <summary>Reads the logon task's longevity &amp; battery health via Task Scheduler COM.</summary>
+    public static Task<ScheduledTaskGuard.Health> InspectHealthAsync() =>
+        Task.Run(() => ScheduledTaskGuard.Inspect(TaskName));
 
     /// <summary>Removes the logon task.</summary>
     public static Task<bool> DisableAsync()

@@ -4,6 +4,8 @@ namespace ShieldsUp.Core.Models
     {
         public string TaskName { get; set; }
         public string TaskPath { get; set; }
+        public string FullPath { get; set; }
+        public string Scope { get; set; }
         public string State { get; set; }
         public string Action { get; set; }
         public string User { get; set; }
@@ -25,6 +27,8 @@ namespace ShieldsUp.Core.Models
         public string Value { get; set; }
         public string Location { get; set; }
         public string TargetPath { get; set; }
+        public string State { get; set; } = "Active";
+        public bool IsDisabledSnapshot { get; set; }
     }
 
     public class AppPackageItem

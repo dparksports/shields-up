@@ -167,8 +167,7 @@ public sealed partial class PrivacyPage : Page
     {
         return Task.Run(() =>
         {
-            string output = ProcessRunner.Run("bcdedit", "/enum {current}");
-            bool debugOn = output.Contains("debug") && output.Contains("Yes");
+            bool debugOn = AttackSurfaceService.IsKernelDebugOn();
 
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -182,7 +181,7 @@ public sealed partial class PrivacyPage : Page
 
     private async void KdnetDisableBtn_Click(object sender, RoutedEventArgs e)
     {
-        await ProcessRunner.RunAsync("bcdedit", "/debug off");
+        await Task.Run(() => AttackSurfaceService.SetKernelDebug(false));
         await CheckKdnetStatus();
     }
 
@@ -191,7 +190,7 @@ public sealed partial class PrivacyPage : Page
         if (!await Helpers.Dialogs.Confirm("Enable kernel debugging? This is a significant security risk.",
                 "Warning"))
             return;
-        await ProcessRunner.RunAsync("bcdedit", "/debug on");
+        await Task.Run(() => AttackSurfaceService.SetKernelDebug(true));
         await CheckKdnetStatus();
     }
 

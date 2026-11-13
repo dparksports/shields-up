@@ -9,3 +9,4 @@ crash.log
 admin-token.txt
 # wrangler local state (never commit)
 .wrangler/
+.citmp/
