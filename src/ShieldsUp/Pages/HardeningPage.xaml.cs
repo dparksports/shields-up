@@ -1,4 +1,5 @@
 using ShieldsUp.Core.Helpers;
+using ShieldsUp.Core.Services;
 using Microsoft.UI.Xaml.Media;
 
 namespace ShieldsUp.Pages;
@@ -25,7 +26,8 @@ public sealed partial class HardeningPage : Page
             CheckLsaStatus(),
             CheckUacStatus(),
             CheckHostsFile(),
-            CheckIpv6Status()
+            CheckIpv6Status(),
+            CheckAccountsStatus()
         );
     }
 
@@ -238,5 +240,88 @@ public sealed partial class HardeningPage : Page
             catch { }
         });
         await CheckHostsFile();
+    }
+
+    // ── Local Accounts audit ────────────────────────────────────────────
+
+    private Dictionary<string, Finding> _findingsBySid = new();
+
+    private Task CheckAccountsStatus()
+    {
+        return Task.Run(() =>
+        {
+            AccountsStatus status = null;
+            Exception error = null;
+            try { status = AccountSurfaceService.GetAccountsStatus(); }
+            catch (Exception ex) { error = ex; }
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (error is not null)
+                {
+                    AccountsStatusText.Text = $"Error reading account state: {error.Message}";
+                    AccountsStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xD7, 0x00, 0x15));
+                    AccountsList.ItemsSource = null;
+                    return;
+                }
+
+                _findingsBySid = status.Findings
+                    .Where(f => !string.IsNullOrEmpty(f.Sid))
+                    .GroupBy(f => f.Sid, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+                AccountsList.ItemsSource = status.Findings;
+
+                if (status.Findings.Count == 0)
+                {
+                    AccountsStatusText.Text = status.Failures.Count > 0
+                        ? "✓ no leftover accounts or profiles (see app.log for read warnings)"
+                        : "✓ no leftover accounts or profiles";
+                    AccountsStatusText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.ForestGreen);
+                }
+                else
+                {
+                    int attention = status.Findings.Count(f => f.Severity == "attention");
+                    AccountsStatusText.Text = $"⚠ {status.Findings.Count} leftover finding(s)"
+                        + (attention > 0 ? $" ({attention} need attention)" : "");
+                    AccountsStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0xB2, 0x6A, 0x00));
+                }
+            });
+        });
+    }
+
+    // x:Bind computed properties (Glyph, Title, ShowPrune) live on Finding itself
+
+    private async void AccountPruneBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var sid = (sender as FrameworkElement)?.Tag as string;
+        if (string.IsNullOrEmpty(sid)) return;
+        _findingsBySid.TryGetValue(sid, out var finding);
+
+        var name = finding?.AccountName ?? sid;
+        var detail = finding?.Detail ?? sid;
+        if (!await Helpers.Dialogs.Confirm(
+                $"Delete {name} ({sid})?\n\n{detail}\n\n" +
+                "The account and its profile files are permanently deleted. This cannot be undone.",
+                "Prune leftover", yes: "Prune", no: "Cancel", defaultIsPrimary: false))
+            return;
+
+        List<string> failures;
+        try
+        {
+            failures = await Task.Run(() => AccountSurfaceService.PruneLeftover(sid));
+        }
+        catch (Exception ex)
+        {
+            await Helpers.Dialogs.Error($"Prune crashed: {ex.Message}", "Prune failed");
+            await CheckAccountsStatus();
+            return;
+        }
+
+        if (failures.Count == 0)
+            await Helpers.Dialogs.Inform("Pruned and verified: the account and profile are gone.", "Prune complete");
+        else
+            await Helpers.Dialogs.Error("Prune finished with problems:\n" + string.Join("\n", failures), "Prune failed");
+
+        await CheckAccountsStatus();
     }
 }

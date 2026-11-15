@@ -79,7 +79,7 @@ namespace ShieldsUp.Core.Agent
                         "Live attack-surface, legacy name-resolution, and OS hardening posture: SSTP & VPN " +
                         "miniports, Wi-Fi Direct hosted network, KDNET/kernel debug, VPN services, " +
                         "UsageDataReceiver task, LLMNR, NetBIOS over TCP/IP, mDNS, Hotpatch Monitoring, " +
-                        "IPv6, UAC strictness, and LSA PPL. Read-only."),
+                        "IPv6, UAC strictness, LSA PPL, and leftover setup accounts & orphaned profiles. Read-only."),
                     ToolDescriptor("get_startup_status",
                         "Persistent logon items (Run keys, Startup folders, plus snapshotted-disabled " +
                         "entries) and scheduled tasks classified into Third-party vs Windows inbox. Read-only."))
@@ -208,6 +208,30 @@ namespace ShieldsUp.Core.Agent
 
             bool usageTaskOn = TaskSchedulerService.Instance.IsTaskEnabled(UsageDataTaskPath);
 
+            var accountFindings = new JsonArray();
+            int accountFindingCount = 0;
+            string accountNote = null;
+            try
+            {
+                var acc = AccountSurfaceService.GetAccountsStatus();
+                accountFindingCount = acc.Findings.Count;
+                foreach (var f in acc.Findings)
+                    accountFindings.Add(new JsonObject
+                    {
+                        ["kind"] = f.Kind,
+                        ["severity"] = f.Severity,
+                        ["account"] = f.AccountName,
+                        ["sid"] = f.Sid,
+                        ["detail"] = f.Detail,
+                    });
+                if (acc.Failures.Count > 0)
+                    accountNote = string.Join("; ", acc.Failures);
+            }
+            catch (Exception ex)
+            {
+                accountNote = "account audit failed: " + ex.Message;
+            }
+
             var doors = new JsonObject
             {
                 ["sstp"] = new JsonObject { ["open"] = sstp.Active, ["status"] = sstp.StatusText, ["start_mode"] = sstp.StartMode },
@@ -225,6 +249,12 @@ namespace ShieldsUp.Core.Agent
             {
                 ["type"] = "shieldsup_status",
                 ["doors"] = doors,
+                ["accounts"] = new JsonObject
+                {
+                    ["finding_count"] = accountFindingCount,
+                    ["findings"] = accountFindings,
+                    ["note"] = accountNote ?? "pruning happens in the app's OS Hardening page — read-only here",
+                },
                 ["hardening"] = new JsonObject
                 {
                     ["ipv6_disabled"] = RegistryHelper.GetIpv6DisabledStatus(),

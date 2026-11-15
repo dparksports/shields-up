@@ -25,6 +25,7 @@ public static class AppPaths
     public static string ServiceBackupPath => Path.Combine(DataRoot, "service_start_backup.txt");
     public static string NameResolutionDoorsPath => Path.Combine(DataRoot, "name-resolution-doors.json");
     public static string StartupStatePath => Path.Combine(DataRoot, "startup-state.json");
+    public static string AccountsStatePath => Path.Combine(DataRoot, "account-state.json");
 
     public static string CrashLogPath => Path.Combine(AppContext.BaseDirectory, "crash.log");
 
