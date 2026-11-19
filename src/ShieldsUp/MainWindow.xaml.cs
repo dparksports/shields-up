@@ -75,10 +75,12 @@ public sealed partial class MainWindow : Window
         Nav.SelectedItem = Nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault();
         Core.Services.AppLogger.Log("shell", "MainWindow created");
 
-        // Anonymous usage count (opt-in, off by default): the consent dialog
-        // is offered here (max 3 times, ever), and consenting installs ping
-        // once a day. Inert while UsagePingService.Endpoint is unconfigured.
-        // Spec + server code: telemetry/ in the repository.
+        // Usage count (opt-in, off by default): the consent dialog is
+        // offered here (max 3 times, ever), and consenting installs ping
+        // once a day — app version + a random, locally-invented install id
+        // so the server counts unique installs. Inert while
+        // UsagePingService.Endpoint is unconfigured. Spec + server code:
+        // telemetry/ in the repository.
         //
         // On a small display the dialog is deliberately NOT raised on launch:
         // it would cover most of a 800x600-class window before the user has
